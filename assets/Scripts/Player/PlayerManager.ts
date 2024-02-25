@@ -1,55 +1,38 @@
 
-import { _decorator, Component, Sprite, UITransform } from 'cc';
-import { TILE_HEIGHT, TILE_WIDTH } from '../Tile/TileManager';
-import { CONTROLLER_ENUM, DIRECTION_ENUM, DIRECTION_ORDER_ENUM, EVENT_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../../Enums';
+import { _decorator } from 'cc';
+import { CONTROLLER_ENUM, DIRECTION_ENUM, ENTITY_TYPE_ENUM, EVENT_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../../Enums';
 import EventManager from '../../Runtime/EventManager';
 import { PlayerStateMachine } from './PlayerStateMachine';
+import { Manager } from '../../Base/Manager';
+import DataManager from '../../Runtime/DataManager';
 const { ccclass, property } = _decorator;
 
 
 @ccclass('PlayerManager')
-export class PlayerManager extends Component {
-  x: number = 0
-  y: number = 0
+export class PlayerManager extends Manager {
   targetX: number = 0
   targetY: number = 0
 
   fsm: PlayerStateMachine
   private readonly speed = 1 / 10
-  private _direction: DIRECTION_ENUM
-  private _state: STATE_ENUM
-  
-  get direction() {
-    return this._direction
-  }
-  set direction(newDirection) {
-    this._direction = newDirection
-    this.fsm.setParams(PARAM_NAME_ENUM.DIRECTION, DIRECTION_ORDER_ENUM[this._direction])
-  }
-  get state() {
-    return this._state
-  }
-  set state(newState) {
-    this._state = newState
-    this.fsm.setParams(newState, true)
-  }
+
   async init() {
-    const sprite = this.addComponent(Sprite)
-    sprite.sizeMode = Sprite.SizeMode.CUSTOM
-
-    const transform = this.getComponent(UITransform)
-    transform.setContentSize(TILE_WIDTH * 4, TILE_HEIGHT * 4)
-
     this.fsm = this.addComponent(PlayerStateMachine)
     await this.fsm.init()
-    // 要保证setParams在init后执行，fsm的init中有资源加载，必须保证所有资源加载完才退出init
-    this.state = STATE_ENUM.IDLE
-    EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.move, this)
+    super.init({
+      x: 2,
+      y: 8,
+      direction: DIRECTION_ENUM.TOP,
+      state: STATE_ENUM.IDLE,
+      type: ENTITY_TYPE_ENUM.PLAYER
+    })  
+    this.targetX = this.x
+    this.targetY = this.y
+    EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.handleInput, this)
   }  
   update() {
     this.updateXY()
-    // 人物宽高是4个瓦片，需要使人物居中
-    this.node.setPosition(this.x * TILE_WIDTH - TILE_WIDTH * 1.5, -this.y * TILE_HEIGHT + TILE_HEIGHT * 1.5)
+    super.update()
   }
   updateXY() {
     if(this.targetX < this.x) {
@@ -69,8 +52,15 @@ export class PlayerManager extends Component {
       this.y = this.targetY
     }
   }
-  move(direction: CONTROLLER_ENUM) {
-    switch(direction) {
+  handleInput(inputDirection: CONTROLLER_ENUM) {
+    if(this.willBlock(inputDirection)) { // 撞了
+      console.log('block');
+      return 
+    }
+    this.move(inputDirection)
+  }
+  move(inputDirection: CONTROLLER_ENUM) {
+    switch(inputDirection) {
       case CONTROLLER_ENUM.TOP:
         this.targetY -= 1
         break
@@ -94,6 +84,316 @@ export class PlayerManager extends Component {
           this.direction = DIRECTION_ENUM.TOP
         }
         this.state = STATE_ENUM.TURN_LEFT
+        break
+      case CONTROLLER_ENUM.TURN_RIGHT:
+        if(this.direction === DIRECTION_ENUM.TOP) {
+          this.direction = DIRECTION_ENUM.RIGHT
+        } else if(this.direction === DIRECTION_ENUM.LEFT) {
+          this.direction = DIRECTION_ENUM.TOP
+        } else if(this.direction === DIRECTION_ENUM.BOTTOM) {
+          this.direction = DIRECTION_ENUM.LEFT
+        } else if(this.direction === DIRECTION_ENUM.RIGHT) {
+          this.direction = DIRECTION_ENUM.BOTTOM
+        }
+        this.state = STATE_ENUM.TURN_RIGHT
     }
+  }
+  // 判断用户输入行为是否会触发碰撞
+  willBlock(inputDirection: CONTROLLER_ENUM) {
+    const { targetX: x, targetY: y, direction } = this
+    const { tileInfo, mapRowCount: row, mapColumnCount: column } = DataManager.Instance
+    if(inputDirection === CONTROLLER_ENUM.TOP) {
+      const playerNextY = y - 1 // 人的下一个y坐标
+      if(direction === DIRECTION_ENUM.TOP) {  // 当前方向向上且输入方向向上 
+        if(playerNextY < 0) { 
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+        }
+        const weaponNextY = y - 2 // 枪的下一个y坐标
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[x][weaponNextY]
+        // 人和枪都能走
+        if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+        else {
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+        }
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        if(playerNextY < 0) { 
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+        }
+        const weaponNextY = y // 枪的下一个y坐标
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[x][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        if(playerNextY < 0) { 
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+        }
+        const weaponNextX = x - 1 
+        const weaponNextY = y - 1
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        if(playerNextY < 0) { 
+          this.state = STATE_ENUM.BLOCK_LEFT
+          return true
+        }
+        const weaponNextX = x + 1 
+        const weaponNextY = y - 1
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+        // 人和枪都能走
+        if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+        else {
+        this.state = STATE_ENUM.BLOCK_LEFT
+        return true
+        }
+      }
+    } else if(inputDirection === CONTROLLER_ENUM.BOTTOM) {
+      const playerNextY = y + 1 // 人的下一个y坐标
+      if(direction === DIRECTION_ENUM.TOP) {  // 当前方向向上且输入方向向下
+        if(playerNextY > column - 1) { 
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+        }
+        const weaponNextY = y  // 枪的下一个y坐标
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[x][weaponNextY]
+        // 人和枪都能走
+        if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+        else {
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+        }
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        if(playerNextY > column - 1) { 
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+        }
+        const weaponNextY = y + 2 // 枪的下一个y坐标
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[x][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        if(playerNextY > column - 1) { 
+          this.state = STATE_ENUM.BLOCK_LEFT
+          return true
+        }
+        const weaponNextX = x - 1 
+        const weaponNextY = y + 1
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_LEFT
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        if(playerNextY > column - 1) { 
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+        }
+        const weaponNextX = x + 1 
+        const weaponNextY = y + 1
+        const playerNextTile = tileInfo[x][playerNextY]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+         }
+      }
+    } else if(inputDirection === CONTROLLER_ENUM.LEFT) {
+      const playerNextX = x - 1 // 人的下一个x坐标
+      if(direction === DIRECTION_ENUM.TOP) {  // 当前方向向上且输入方向向左 
+        if(playerNextX < 0) { 
+          this.state = STATE_ENUM.BLOCK_LEFT
+          return true
+        }
+        const weaponNextX = x - 1
+        const weaponNextY = y - 1  
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+        // 人和枪都能走
+        if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+        else {
+          this.state = STATE_ENUM.BLOCK_LEFT
+          return true
+        }
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        if(playerNextX < 0) { 
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+        }
+        const weaponNextX = x - 1
+        const weaponNextY = y + 1 
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_RIGHT
+           return true
+         }
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        if(playerNextX < 0) { 
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+        }
+        const weaponNextX = x - 2
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][y]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        if(playerNextX < 0) { 
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+        }
+        const weaponNextX = x 
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][y]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+         }
+      }
+    } else if(inputDirection === CONTROLLER_ENUM.RIGHT) {
+      const playerNextX = x + 1 // 人的下一个x坐标
+      if(direction === DIRECTION_ENUM.TOP) {  // 当前方向向上且输入方向向右 
+        if(playerNextX > row - 1) { 
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+        }
+        const weaponNextX = x + 1 
+        const weaponNextY = y - 1
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+        // 人和枪都能走
+        if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+        else {
+          this.state = STATE_ENUM.BLOCK_RIGHT
+          return true
+        }
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        if(playerNextX > row - 1) {
+          this.state = STATE_ENUM.BLOCK_LEFT 
+          return true
+        }
+        const weaponNextX = x + 1
+        const weaponNextY = y + 1 
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][weaponNextY]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_LEFT
+           return true
+         }
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        if(playerNextX > row - 1) { 
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+        }
+        const weaponNextX = x
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][y]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_BACK
+          return true
+         }
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        if(playerNextX > row - 1) { 
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+        }
+        const weaponNextX = x + 2
+        const playerNextTile = tileInfo[playerNextX][y]
+        const weaponNextTile = tileInfo[weaponNextX][y]
+         // 人和枪都能走
+         if(playerNextTile && playerNextTile.moveable && (!weaponNextTile || weaponNextTile.turnable)) {}
+         else {
+          this.state = STATE_ENUM.BLOCK_FRONT
+          return true
+         }
+      }
+    } else if(inputDirection === CONTROLLER_ENUM.TURN_LEFT) {
+      let nextX: number, nextY: number
+      //朝上左转的话，左上角三个tile都必须turnable为true
+      if(direction === DIRECTION_ENUM.TOP) {
+        nextX = x - 1
+        nextY = y - 1
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        nextX = x + 1
+        nextY = y + 1
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        nextX = x - 1
+        nextY = y + 1
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        nextX = x + 1
+        nextY = y - 1
+      }
+      if(
+        (!tileInfo[x][nextY] || tileInfo[x][nextY].turnable) && 
+        (!tileInfo[nextX][y] || tileInfo[nextX][y].turnable) && 
+        (!tileInfo[nextX][nextY] || tileInfo[nextX][nextY].turnable)
+        ) {} else {
+          this.state = STATE_ENUM.BLOCK_TURN_LEFT
+          return true
+        }
+    } else if(inputDirection === CONTROLLER_ENUM.TURN_RIGHT) {
+      let nextX: number, nextY: number
+      //朝上右转的话，右上角三个tile都必须turnable为true
+      if(direction === DIRECTION_ENUM.TOP) {
+        nextX = x + 1
+        nextY = y - 1
+      } else if(direction === DIRECTION_ENUM.BOTTOM) {
+        nextX = x - 1
+        nextY = y + 1
+      } else if(direction === DIRECTION_ENUM.LEFT) {
+        nextX = x - 1
+        nextY = y - 1
+      } else if(direction === DIRECTION_ENUM.RIGHT) {
+        nextX = x + 1
+        nextY = y + 1
+      }
+      if(
+        (!tileInfo[x][nextY] || tileInfo[x][nextY].turnable) && 
+        (!tileInfo[nextX][nextY] || tileInfo[nextX][nextY].turnable)
+        ) {} else {
+          this.state = STATE_ENUM.BLOCK_TURN_RIGHT
+          return true
+        }
+    } 
+    return false
   }
 }

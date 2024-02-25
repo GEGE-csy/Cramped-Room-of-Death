@@ -1,4 +1,4 @@
-import { Layers, Node, UITransform } from 'cc'
+import { Layers, Node, SpriteFrame, UITransform } from 'cc'
 
 // 对于渲染节点的统一设置
 export const createUINode = (name: string = '') => {
@@ -12,3 +12,8 @@ export const createUINode = (name: string = '') => {
 export const randomByRange = (start: number, end: number) => {
   return Math.floor((end - start) * Math.random()) + start
 }
+
+// 将动画帧排序，防止自动排序混乱
+const reg = /\((\d+)\)/
+const getNumberString = (str: string) => parseInt(str.match(reg)[1] || '0')
+export const sortSpriteFrame = (spriteFrames: SpriteFrame[]) => spriteFrames.sort((a,b) => getNumberString(a.name) - getNumberString(b.name))

@@ -10,7 +10,7 @@
   },
   {
     "__type__": "cc.Scene",
-    "_name": "scene",
+    "_name": "Battle",
     "_objFlags": 0,
     "_parent": null,
     "_children": [
@@ -1258,7 +1258,7 @@
     "component": "",
     "_componentId": "aa335hRovFM9J17TS9tfHRi",
     "handler": "handleCtrl",
-    "customEventData": ""
+    "customEventData": "TURN_RIGHT"
   },
   {
     "__type__": "cc.Node",

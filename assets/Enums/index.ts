@@ -1,5 +1,5 @@
 /**
- * 墙壁类型：1横墙壁 2竖墙壁 3左上角 4右上角 5左下角 6右下角
+ * 墙壁类型：1横墙壁 2竖墙壁 3左上墙壁 4右上角墙壁 5左下角墙壁 6右下角墙壁
  *          7悬崖左 8悬崖右 9悬崖中 10地板
  */
 export enum TILE_TYPE_ENUM {
@@ -39,7 +39,14 @@ export enum FSM_PARAMS_TYPE_ENUM {
 export enum PARAM_NAME_ENUM {
   IDLE = 'IDLE',
   TURN_LEFT = 'TURN_LEFT',
-  DIRECTION = 'DIRECTION'
+  TURN_RIGHT = 'TURN_RIGHT',
+  BLOCK_FRONT = 'BLOCK_FRONT',
+  BLOCK_BACK = 'BLOCK_BACK',
+  BLOCK_LEFT = 'BLOCK_LEFT',
+  BLOCK_RIGHT = 'BLOCK_RIGHT',
+  BLOCK_TURN_LEFT = 'BLOCK_TURN_LEFT',
+  BLOCK_TURN_RIGHT = 'BLOCK_TURN_RIGHT',
+  DIRECTION = 'DIRECTION',
 }
 // 人物方向
 export enum DIRECTION_ENUM {
@@ -51,7 +58,14 @@ export enum DIRECTION_ENUM {
 // 人物状态
 export enum STATE_ENUM {
   IDLE = 'IDLE',
-  TURN_LEFT = 'TURN_LEFT'
+  TURN_LEFT = 'TURN_LEFT',
+  TURN_RIGHT = 'TURN_RIGHT',
+  BLOCK_FRONT = 'BLOCK_FRONT',
+  BLOCK_BACK = 'BLOCK_BACK',
+  BLOCK_LEFT = 'BLOCK_LEFT',
+  BLOCK_RIGHT = 'BLOCK_RIGHT',
+  BLOCK_TURN_LEFT = 'BLOCK_TURN_LEFT',
+  BLOCK_TURN_RIGHT = 'BLOCK_TURN_RIGHT',
 }
 
 export enum DIRECTION_ORDER_ENUM {
@@ -59,4 +73,8 @@ export enum DIRECTION_ORDER_ENUM {
   BOTTOM = 1,
   LEFT = 2,
   RIGHT = 3
+}
+
+export enum ENTITY_TYPE_ENUM {
+  PLAYER = 'PLAYER'
 }

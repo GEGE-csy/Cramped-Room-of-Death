@@ -1,7 +1,17 @@
 
-import { _decorator, AnimationClip, Animation, Component, Node, SpriteFrame } from 'cc';
-import { FSM_PARAMS_TYPE_ENUM, PARAM_NAME_ENUM } from '../../Enums';
-import State from '../../Base/State';
+import { _decorator, Animation } from 'cc';
+import { FSM_PARAMS_TYPE_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../../Enums';
+import { StateMachine } from '../../Base/StateMachine';
+import { Manager } from '../../Base/Manager';
+import IdleSubStateMachine from './IdleSubStateMachine';
+import TurnLeftSubStateMachine from './TurnLeftSubStateMachine';
+import TurnRightSubStateMachine from './TurnRightSubStateMachine';
+import BlockFrontSubStateMachine from './BlockFrontSubStateMachine';
+import BlockTurnLeftSubStateMachine from './BlockTurnLeftSubStateMachine';
+import BlockTurnRightSubStateMachine from './BlockTurnRightSubStateMachine';
+import BlockBackSubStateMachine from './BlockBackSubStateMachine';
+import BlockLeftSubStateMachine from './BlockLeftSubStateMachine';
+import BlockRightSubStateMachine from './BlockRightSubStateMachine';
 const { ccclass, property } = _decorator;
 
 export interface IParamValue {
@@ -10,49 +20,9 @@ export interface IParamValue {
 }
 
 @ccclass('PlayerStateMachine')
-export class PlayerStateMachine extends Component {
-  private _currentState: State = null
-  // 参数列表
-  params: Map<string, IParamValue> = new Map()
-  // 状态机列表
-  stateMachines: Map<string, State> = new Map()
-  animationComponent: Animation
-  // 加载资源的promise列表
-  waitingList: Promise<SpriteFrame[]>[] = []
-
-  getParams(paramsName: string) {
-    if(this.params.has(paramsName)) {
-      return this.params.get(paramsName).value
-    }
-  }
-  setParams(paramsName: string, value: boolean | number) {
-    if(this.params.has(paramsName)) {
-      this.params.get(paramsName).value = value
-      // 参数改变了，执行run()改变状态
-      this.transition()
-      // 触发器完成一次条件判断后应设置为未触发状态
-      this.resetTrigger()
-    }
-  }
-  get currentState() {
-    return this._currentState
-  }
-
-  set currentState(newState) {
-    this._currentState = newState
-    // currentState被修改时应该要执行动画了
-    this._currentState.run()
-  }
-
-  resetTrigger() {
-    for(const [_, paramValue] of this.params) {
-      if(paramValue.type === FSM_PARAMS_TYPE_ENUM.TRIGGER) {
-        paramValue.value = false
-      }
-    }
-  }
+export class PlayerStateMachine extends StateMachine {
   async init() {
-    this.animationComponent = this.addComponent(Animation)
+    this.animationComponent = this.node.addComponent(Animation)
     this.initParams()
     this.initStateMachines()
     this.initAnimationEvent()
@@ -68,6 +38,34 @@ export class PlayerStateMachine extends Component {
       type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
       value: false
     })
+    this.params.set(PARAM_NAME_ENUM.TURN_RIGHT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_FRONT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_BACK, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_LEFT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_RIGHT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
+    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, {
+      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+      value: false
+    })
     this.params.set(PARAM_NAME_ENUM.DIRECTION, {
       type: FSM_PARAMS_TYPE_ENUM.NUMBER,
       value: 0
@@ -75,33 +73,64 @@ export class PlayerStateMachine extends Component {
   }
   // 初始化状态机列表
   initStateMachines() {
-    this.stateMachines.set(PARAM_NAME_ENUM.IDLE, new State(this, 'texture/player/idle/top', AnimationClip.WrapMode.Loop))
-    this.stateMachines.set(PARAM_NAME_ENUM.TURN_LEFT, new State(this, 'texture/player/turnleft/top'))
+    this.stateMachines.set(PARAM_NAME_ENUM.IDLE, new IdleSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.TURN_LEFT, new TurnLeftSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.TURN_RIGHT, new TurnRightSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_FRONT, new BlockFrontSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_BACK, new BlockBackSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_LEFT, new BlockLeftSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_RIGHT, new BlockRightSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, new BlockTurnLeftSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, new BlockTurnRightSubStateMachine(this))
   }
   initAnimationEvent() {
     // 监听动画完成，如果执行的是turn相关的动画，要恢复到idle状态
     this.animationComponent.on(Animation.EventType.FINISHED, () => {
       const name = this.animationComponent.defaultClip.name
-      const whiteList = ['turn']
+      const whiteList = ['block', 'turn']
       if(whiteList.some(v => name.includes(v))) {
-        this.setParams(PARAM_NAME_ENUM.IDLE, true)
+        this.node.getComponent(Manager).state = STATE_ENUM.IDLE
       }
     })
   }
-  // 两个状态之间的transition，改变参数的时候要执行，从而修改currentState
-  transition() {
+  // 两个状态之间的run，改变参数的时候要执行，从而修改currentState
+  run() {
     switch(this.currentState) {
       case this.stateMachines.get(PARAM_NAME_ENUM.TURN_LEFT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_BACK):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_LEFT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_RIGHT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_LEFT):
+      case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.IDLE):
-        // turn_left的trigger为true，则过渡到turn_left状态
-        if(this.params.get(PARAM_NAME_ENUM.TURN_LEFT).value) {
+        // blockfront的trigger为true，则过渡到blockfront状态
+        if(this.params.get(PARAM_NAME_ENUM.BLOCK_FRONT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT)
+        } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_BACK).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_BACK)
+        } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_LEFT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_LEFT)
+        } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_RIGHT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_RIGHT)
+        } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_TURN_LEFT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_LEFT)
+        } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT)
+        } else if(this.params.get(PARAM_NAME_ENUM.TURN_LEFT).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.TURN_LEFT)
+        } else if(this.params.get(PARAM_NAME_ENUM.TURN_RIGHT).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT)
         } else if(this.params.get(PARAM_NAME_ENUM.IDLE).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
+        } else { // 触发set currentState
+          this.currentState = this.currentState
         }
         break
       default:
         this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
+        break
     }
   }
 }
