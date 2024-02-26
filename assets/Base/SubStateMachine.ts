@@ -1,11 +1,12 @@
 
 import State from './State';
-import { StateMachine } from './StateMachine';
+import StateMachine from './StateMachine';
 
-export abstract class SubStateMachine {
+export default abstract class SubStateMachine {
   private _currentState: State = null
   // 状态机列表
   stateMachines: Map<string, State> = new Map()
+
   constructor(public fsm: StateMachine) {}
 
   get currentState() {

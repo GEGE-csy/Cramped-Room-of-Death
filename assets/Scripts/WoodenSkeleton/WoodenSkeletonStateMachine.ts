@@ -1,7 +1,7 @@
 
 import { _decorator, Animation } from 'cc';
 import { FSM_PARAMS_TYPE_ENUM, PARAM_NAME_ENUM } from '../../Enums';
-import { StateMachine } from '../../Base/StateMachine';
+import  StateMachine, { getInitParamsNumber, getInitParamsTrigger } from '../../Base/StateMachine';
 import IdleSubStateMachine from './IdleSubStateMachine';
 const { ccclass, property } = _decorator;
 
@@ -21,14 +21,8 @@ export class WoodenSkeletonStateMachine extends StateMachine {
     await Promise.all(this.waitingList)
   }
   initParams() {
-    this.params.set(PARAM_NAME_ENUM.IDLE, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.DIRECTION, {
-      type: FSM_PARAMS_TYPE_ENUM.NUMBER,
-      value: 0
-    })
+    this.params.set(PARAM_NAME_ENUM.IDLE, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.DIRECTION, getInitParamsNumber())
   }
   // 初始化状态机列表
   initStateMachines() {
@@ -49,7 +43,6 @@ export class WoodenSkeletonStateMachine extends StateMachine {
   run() {
     switch(this.currentState) {
       case this.stateMachines.get(PARAM_NAME_ENUM.IDLE):
-        // blockfront的trigger为true，则过渡到blockfront状态
         if(this.params.get(PARAM_NAME_ENUM.IDLE).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
         } else { // 触发set currentState

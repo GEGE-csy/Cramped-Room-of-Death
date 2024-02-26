@@ -1,5 +1,5 @@
 
-import { SubStateMachine } from './SubStateMachine';
+import SubStateMachine from './SubStateMachine';
 import { DIRECTION_ORDER_ENUM, PARAM_NAME_ENUM } from '../Enums';
 
 export default abstract class DirectionSubStateMachine extends SubStateMachine {

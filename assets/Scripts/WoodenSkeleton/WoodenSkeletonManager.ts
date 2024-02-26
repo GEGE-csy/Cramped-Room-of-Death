@@ -5,10 +5,11 @@ import { Manager } from '../../Base/Manager';
 import { WoodenSkeletonStateMachine } from './WoodenSkeletonStateMachine';
 import EventManager from '../../Runtime/EventManager';
 import DataManager from '../../Runtime/DataManager';
+import StateMachine from '../../Base/StateMachine';
 const { ccclass, property } = _decorator;
 
 
-@ccclass('SkeletonManager')
+@ccclass('WoodenSkeletonManager')
 export class WoodenSkeletonManager extends Manager {
   async init() {
     this.fsm = this.addComponent(WoodenSkeletonStateMachine)

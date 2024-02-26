@@ -1,6 +1,6 @@
 
 import State from "../../Base/State";
-import { StateMachine } from "../../Base/StateMachine";
+import  StateMachine from "../../Base/StateMachine";
 import { DIRECTION_ENUM, DIRECTION_ORDER_ENUM, PARAM_NAME_ENUM } from "../../Enums";
 import DirectionSubStateMachine from '../../Base/DirectionSubStateMachine';
 

@@ -5,16 +5,16 @@ import EventManager from '../../Runtime/EventManager';
 import { PlayerStateMachine } from './PlayerStateMachine';
 import { Manager } from '../../Base/Manager';
 import DataManager from '../../Runtime/DataManager';
+import StateMachine from '../../Base/StateMachine';
 const { ccclass, property } = _decorator;
 
 
 @ccclass('PlayerManager')
 export class PlayerManager extends Manager {
-  targetX: number = 0
-  targetY: number = 0
+  targetX: number
+  targetY: number
   isMoving = false
 
-  fsm: PlayerStateMachine
   private readonly speed = 1 / 10
 
   async init() {

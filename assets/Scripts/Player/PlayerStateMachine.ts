@@ -1,7 +1,7 @@
 
 import { _decorator, Animation } from 'cc';
 import { FSM_PARAMS_TYPE_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../../Enums';
-import { StateMachine } from '../../Base/StateMachine';
+import StateMachine, { getInitParamsNumber, getInitParamsTrigger } from '../../Base/StateMachine';
 import { Manager } from '../../Base/Manager';
 import IdleSubStateMachine from './IdleSubStateMachine';
 import TurnLeftSubStateMachine from './TurnLeftSubStateMachine';
@@ -30,46 +30,16 @@ export class PlayerStateMachine extends StateMachine {
     await Promise.all(this.waitingList)
   }
   initParams() {
-    this.params.set(PARAM_NAME_ENUM.IDLE, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.TURN_LEFT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.TURN_RIGHT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_FRONT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_BACK, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_LEFT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_RIGHT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, {
-      type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
-      value: false
-    })
-    this.params.set(PARAM_NAME_ENUM.DIRECTION, {
-      type: FSM_PARAMS_TYPE_ENUM.NUMBER,
-      value: 0
-    })
+    this.params.set(PARAM_NAME_ENUM.IDLE, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.TURN_LEFT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.TURN_RIGHT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_FRONT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_BACK, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_LEFT,getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_RIGHT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.DIRECTION, getInitParamsNumber())
   }
   // 初始化状态机列表
   initStateMachines() {

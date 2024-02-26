@@ -1,17 +1,29 @@
 
-import { _decorator, AnimationClip, Animation, Component, Node, SpriteFrame } from 'cc';
-import State from './State';
+import { _decorator, Animation, Component, SpriteFrame } from 'cc';
 import { FSM_PARAMS_TYPE_ENUM } from '../Enums';
-import { SubStateMachine } from './SubStateMachine';
+import State from './State';
+import SubStateMachine from './SubStateMachine';
 const { ccclass, property } = _decorator;
 
 export interface IParamValue {
   type: FSM_PARAMS_TYPE_ENUM,
   value: boolean | number
 }
+export const getInitParamsTrigger = () => {
+  return {
+    type: FSM_PARAMS_TYPE_ENUM.TRIGGER,
+    value: false,
+  }
+}
 
+export const getInitParamsNumber = () => {
+  return {
+    type: FSM_PARAMS_TYPE_ENUM.NUMBER,
+    value: 0,
+  }
+}
 @ccclass('StateMachine')
-export abstract class StateMachine extends Component {
+export default abstract class StateMachine extends Component {
   private _currentState: State | SubStateMachine = null
   // 参数列表
   params: Map<string, IParamValue> = new Map()
