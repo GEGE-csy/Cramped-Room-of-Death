@@ -1,6 +1,6 @@
 
 import { _decorator } from 'cc';
-import { CONTROLLER_ENUM, DIRECTION_ENUM, ENTITY_TYPE_ENUM, EVENT_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../../Enums';
+import { CONTROLLER_ENUM, DIRECTION_ENUM, ENTITY_TYPE_ENUM, EVENT_ENUM, STATE_ENUM } from '../../Enums';
 import EventManager from '../../Runtime/EventManager';
 import { PlayerStateMachine } from './PlayerStateMachine';
 import { Manager } from '../../Base/Manager';
@@ -12,6 +12,7 @@ const { ccclass, property } = _decorator;
 export class PlayerManager extends Manager {
   targetX: number = 0
   targetY: number = 0
+  isMoving = false
 
   fsm: PlayerStateMachine
   private readonly speed = 1 / 10
@@ -47,9 +48,15 @@ export class PlayerManager extends Manager {
       this.y += this.speed
     }
     // x和targetX已经接近相等
-    if(Math.abs(this.targetX - this.x) <= Number.EPSILON && Math.abs(this.targetY - this.y) <= Number.EPSILON) {
+    if (
+      Math.abs(this.targetX - this.x) <= Number.EPSILON && 
+      Math.abs(this.targetY - this.y) <= Number.EPSILON &&
+      this.isMoving
+    ) {
+      this.isMoving = false
       this.x = this.targetX
       this.y = this.targetY
+      EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END)
     }
   }
   handleInput(inputDirection: CONTROLLER_ENUM) {
@@ -63,15 +70,19 @@ export class PlayerManager extends Manager {
     switch(inputDirection) {
       case CONTROLLER_ENUM.TOP:
         this.targetY -= 1
+        this.isMoving = true
         break
       case CONTROLLER_ENUM.BOTTOM:
         this.targetY += 1
+        this.isMoving = true
         break
       case CONTROLLER_ENUM.LEFT:
         this.targetX -= 1
+        this.isMoving = true
         break
       case CONTROLLER_ENUM.RIGHT:
         this.targetX += 1
+        this.isMoving = true
         break
       case CONTROLLER_ENUM.TURN_LEFT:
         if(this.direction === DIRECTION_ENUM.TOP) {
@@ -83,6 +94,7 @@ export class PlayerManager extends Manager {
         } else if(this.direction === DIRECTION_ENUM.RIGHT) {
           this.direction = DIRECTION_ENUM.TOP
         }
+        EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END)
         this.state = STATE_ENUM.TURN_LEFT
         break
       case CONTROLLER_ENUM.TURN_RIGHT:
@@ -95,6 +107,7 @@ export class PlayerManager extends Manager {
         } else if(this.direction === DIRECTION_ENUM.RIGHT) {
           this.direction = DIRECTION_ENUM.BOTTOM
         }
+        EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END)
         this.state = STATE_ENUM.TURN_RIGHT
     }
   }

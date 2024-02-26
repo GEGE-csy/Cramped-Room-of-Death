@@ -2,8 +2,8 @@
 import { _decorator, Component, Sprite, UITransform } from 'cc';
 import { DIRECTION_ENUM, DIRECTION_ORDER_ENUM, ENTITY_TYPE_ENUM, PARAM_NAME_ENUM, STATE_ENUM } from '../Enums';
 import { IEntity } from '../Levels';
-import { PlayerStateMachine } from '../Scripts/Player/PlayerStateMachine';
 import { TILE_HEIGHT, TILE_WIDTH } from '../Scripts/Tile/TileManager';
+import { StateMachine } from './StateMachine';
 const { ccclass, property } = _decorator;
 
 
@@ -12,7 +12,7 @@ export class Manager extends Component {
   x: number = 0
   y: number = 0
 
-  fsm: PlayerStateMachine
+  fsm: StateMachine
   private _direction: DIRECTION_ENUM
   private _state: STATE_ENUM
   private type: ENTITY_TYPE_ENUM
