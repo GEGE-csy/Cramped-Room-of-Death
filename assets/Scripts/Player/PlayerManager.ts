@@ -30,6 +30,7 @@ export class PlayerManager extends Manager {
     this.targetX = this.x
     this.targetY = this.y
     EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.handleInput, this)
+    EventManager.Instance.on(EVENT_ENUM.ATTACK_PLAYER, this.onDead, this)
   }  
   update() {
     this.updateXY()
@@ -49,8 +50,8 @@ export class PlayerManager extends Manager {
     }
     // x和targetX已经接近相等
     if (
-      Math.abs(this.targetX - this.x) <= Number.EPSILON && 
-      Math.abs(this.targetY - this.y) <= Number.EPSILON &&
+      Math.abs(this.targetX - this.x) < 0.01 && 
+      Math.abs(this.targetY - this.y) < 0.01 &&
       this.isMoving
     ) {
       this.isMoving = false
@@ -59,7 +60,26 @@ export class PlayerManager extends Manager {
       EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END)
     }
   }
+
+  onDead(type: STATE_ENUM) {
+    this.state = type
+  }
   handleInput(inputDirection: CONTROLLER_ENUM) {
+    if(this.isMoving) { 
+      return
+    }
+    if( // 玩家已死/在空中死/在攻击时不移动
+      this.state === STATE_ENUM.DEATH || 
+      this.state === STATE_ENUM.AIR_DEATH || 
+      this.state === STATE_ENUM.ATTACK
+      ) {
+      return
+    }
+    const id = this.willAttack(inputDirection)
+    if(id) {  // 可能有多个敌人，需要拿到enemy id判断是哪个敌人死了
+      EventManager.Instance.emit(EVENT_ENUM.ATTACK_ENEMY, id)
+      return
+    }
     if(this.willBlock(inputDirection)) { // 撞了
       console.log('block');
       return 
@@ -110,6 +130,47 @@ export class PlayerManager extends Manager {
         EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END)
         this.state = STATE_ENUM.TURN_RIGHT
     }
+  }
+
+  willAttack(type: CONTROLLER_ENUM) {
+    const enemies = DataManager.Instance.enemies.filter(enemy => enemy.state !== STATE_ENUM.DEATH)
+    for(let i = 0; i < enemies.length; i++) {
+      const { x: enemyX, y: enemyY, id: enemyId } = enemies[i]
+      if (
+        this.direction === DIRECTION_ENUM.TOP &&
+        type === CONTROLLER_ENUM.TOP && 
+        enemyX === this.x && 
+        enemyY === this.targetY - 2
+      ) {
+        this.state = STATE_ENUM.ATTACK
+        return enemyId
+      } else if (
+        this.direction === DIRECTION_ENUM.LEFT &&
+        type === CONTROLLER_ENUM.LEFT && 
+        enemyX === this.x - 2 && 
+        enemyY === this.targetY 
+      ) {
+        this.state = STATE_ENUM.ATTACK
+        return enemyId
+      } else if (
+        this.direction === DIRECTION_ENUM.BOTTOM &&
+        type === CONTROLLER_ENUM.BOTTOM && 
+        enemyX === this.x && 
+        enemyY === this.targetY + 2
+      ) {
+        this.state = STATE_ENUM.ATTACK
+        return enemyId
+      } else if (
+        this.direction === DIRECTION_ENUM.RIGHT &&
+        type === CONTROLLER_ENUM.RIGHT && 
+        enemyX === this.x + 2 && 
+        enemyY === this.targetY
+      ) {
+        this.state = STATE_ENUM.ATTACK
+        return enemyId
+      }
+    }
+    return ''
   }
   // 判断用户输入行为是否会触发碰撞
   willBlock(inputDirection: CONTROLLER_ENUM) {

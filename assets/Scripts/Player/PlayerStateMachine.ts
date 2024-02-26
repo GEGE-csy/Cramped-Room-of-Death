@@ -12,6 +12,8 @@ import BlockTurnRightSubStateMachine from './BlockTurnRightSubStateMachine';
 import BlockBackSubStateMachine from './BlockBackSubStateMachine';
 import BlockLeftSubStateMachine from './BlockLeftSubStateMachine';
 import BlockRightSubStateMachine from './BlockRightSubStateMachine';
+import DeathSubStateMachine from './DeathSubStateMachine';
+import AttackSubStateMachine from './AttackSubStateMachine';
 const { ccclass, property } = _decorator;
 
 export interface IParamValue {
@@ -39,6 +41,8 @@ export class PlayerStateMachine extends StateMachine {
     this.params.set(PARAM_NAME_ENUM.BLOCK_RIGHT, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.DEATH, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.ATTACK, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.DIRECTION, getInitParamsNumber())
   }
   // 初始化状态机列表
@@ -52,13 +56,15 @@ export class PlayerStateMachine extends StateMachine {
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_RIGHT, new BlockRightSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, new BlockTurnLeftSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, new BlockTurnRightSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.DEATH, new DeathSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.ATTACK, new AttackSubStateMachine(this))
   }
   initAnimationEvent() {
     // 监听动画完成，如果执行的是turn相关的动画，要恢复到idle状态
     this.animationComponent.on(Animation.EventType.FINISHED, () => {
       const name = this.animationComponent.defaultClip.name
       console.log('name', name)
-      const whiteList = ['block', 'turn']
+      const whiteList = ['block', 'turn', 'attack']
       if(whiteList.some(v => name.includes(v))) {
         this.node.getComponent(Manager).state = STATE_ENUM.IDLE
       }
@@ -67,6 +73,7 @@ export class PlayerStateMachine extends StateMachine {
   // 两个状态之间的run，改变参数的时候要执行，从而修改currentState
   run() {
     switch(this.currentState) {
+      case this.stateMachines.get(PARAM_NAME_ENUM.IDLE):
       case this.stateMachines.get(PARAM_NAME_ENUM.TURN_LEFT):
       case this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT):
@@ -75,7 +82,8 @@ export class PlayerStateMachine extends StateMachine {
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_LEFT):
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT):
-      case this.stateMachines.get(PARAM_NAME_ENUM.IDLE):
+      case this.stateMachines.get(PARAM_NAME_ENUM.DEATH):
+      case this.stateMachines.get(PARAM_NAME_ENUM.ATTACK):
         // blockfront的trigger为true，则过渡到blockfront状态
         if(this.params.get(PARAM_NAME_ENUM.BLOCK_FRONT).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT)
@@ -95,6 +103,10 @@ export class PlayerStateMachine extends StateMachine {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT)
         } else if(this.params.get(PARAM_NAME_ENUM.IDLE).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
+        } else if(this.params.get(PARAM_NAME_ENUM.DEATH).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.DEATH)
+        } else if(this.params.get(PARAM_NAME_ENUM.ATTACK).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.ATTACK)
         } else { // 触发set currentState
           this.currentState = this.currentState
         }

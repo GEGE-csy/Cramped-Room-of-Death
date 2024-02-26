@@ -4,11 +4,13 @@ import { DIRECTION_ENUM, DIRECTION_ORDER_ENUM, ENTITY_TYPE_ENUM, PARAM_NAME_ENUM
 import { IEntity } from '../Levels';
 import { TILE_HEIGHT, TILE_WIDTH } from '../Scripts/Tile/TileManager';
 import StateMachine from './StateMachine';
+import { getRandomString } from '../Utils';
 const { ccclass, property } = _decorator;
 
 
 @ccclass('Manager')
 export class Manager extends Component {
+  id: string = getRandomString(12)
   x: number 
   y: number 
   fsm: StateMachine
@@ -48,5 +50,8 @@ export class Manager extends Component {
   update() {
     // 人物宽高是4个瓦片，需要使人物居中
     this.node.setPosition(this.x * TILE_WIDTH - TILE_WIDTH * 1.5, -this.y * TILE_HEIGHT + TILE_HEIGHT * 1.5)
+  }
+  onDestroy() {
+      
   }
 }
