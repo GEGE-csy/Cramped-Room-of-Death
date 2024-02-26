@@ -1,16 +1,17 @@
 
 import { _decorator } from 'cc';
 import { EVENT_ENUM, STATE_ENUM } from '../../Enums';
-import { WoodenSkeletonStateMachine } from './WoodenSkeletonStateMachine';
 import EventManager from '../../Runtime/EventManager';
 import DataManager from '../../Runtime/DataManager';
 import { EnemyManager } from '../../Base/EnemyManager';
 import { IEntity } from '../../Levels';
+import { IronSkeletonStateMachine } from './IronSkeletonStateMachine';
 const { ccclass, property } = _decorator;
-@ccclass('WoodenSkeletonManager')
-export class WoodenSkeletonManager extends EnemyManager {
+
+@ccclass('IronSkeletonManager')
+export class IronSkeletonManager extends EnemyManager {
   async init(params: IEntity) {
-    this.fsm = this.addComponent(WoodenSkeletonStateMachine)
+    this.fsm = this.addComponent(IronSkeletonStateMachine)
     await this.fsm.init()
     super.init(params)  
     EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.onAttack, this)

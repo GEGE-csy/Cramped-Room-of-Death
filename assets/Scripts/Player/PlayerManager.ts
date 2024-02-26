@@ -5,7 +5,7 @@ import EventManager from '../../Runtime/EventManager';
 import { PlayerStateMachine } from './PlayerStateMachine';
 import { Manager } from '../../Base/Manager';
 import DataManager from '../../Runtime/DataManager';
-import StateMachine from '../../Base/StateMachine';
+import { IEntity } from '../../Levels';
 const { ccclass, property } = _decorator;
 
 
@@ -17,16 +17,10 @@ export class PlayerManager extends Manager {
 
   private readonly speed = 1 / 10
 
-  async init() {
+  async init(params: IEntity) {
     this.fsm = this.addComponent(PlayerStateMachine)
     await this.fsm.init()
-    super.init({
-      x: 2,
-      y: 8,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.PLAYER
-    })  
+    super.init(params)  
     this.targetX = this.x
     this.targetY = this.y
     EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.handleInput, this)
@@ -78,6 +72,7 @@ export class PlayerManager extends Manager {
     const id = this.willAttack(inputDirection)
     if(id) {  // 可能有多个敌人，需要拿到enemy id判断是哪个敌人死了
       EventManager.Instance.emit(EVENT_ENUM.ATTACK_ENEMY, id)
+      EventManager.Instance.emit(EVENT_ENUM.DOOR_OPEN)
       return
     }
     if(this.willBlock(inputDirection)) { // 撞了
@@ -133,10 +128,12 @@ export class PlayerManager extends Manager {
   }
 
   willAttack(type: CONTROLLER_ENUM) {
+    // 过滤掉死亡的敌人
     const enemies = DataManager.Instance.enemies.filter(enemy => enemy.state !== STATE_ENUM.DEATH)
     for(let i = 0; i < enemies.length; i++) {
       const { x: enemyX, y: enemyY, id: enemyId } = enemies[i]
-      if (
+      // 输入方向和枪的方向一致，判断枪头是否到达敌人
+      if ( 
         this.direction === DIRECTION_ENUM.TOP &&
         type === CONTROLLER_ENUM.TOP && 
         enemyX === this.x && 
