@@ -10,6 +10,7 @@ import { PlayerManager } from "../Player/PlayerManager";
 import { WoodenSkeletonManager } from "../WoodenSkeleton/WoodenSkeletonManager";
 import { DoorManager } from "../Door/DoorManager";
 import { IronSkeletonManager } from "../IronSkeleton/IronSkeletonManager";
+import { BurstManager } from "../Burst/BurstManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("BattleManager")
@@ -40,8 +41,9 @@ export class BattleManager extends Component {
 			DataManager.Instance.mapRowCount = this.level.mapInfo.length || 0;
 			DataManager.Instance.mapColumnCount = this.level.mapInfo[0].length || 0;
 			this.generateTileMap();
+      this.generateBursts();
 			this.generatePlayer();
-			this.generateEnemies();
+			// this.generateEnemies();
       this.generateDoor()
 		}
 	}
@@ -69,7 +71,24 @@ export class BattleManager extends Component {
 
 		this.adaptPosition();
 	}
+  async generateBursts() {
+		const bursts = createUINode();
+		bursts.setParent(this.stage);
+		const burstManager = bursts.addComponent(BurstManager);
+		await burstManager.init({
+      x: 2,
+      y: 3,
+      direction: DIRECTION_ENUM.TOP,
+      state: STATE_ENUM.IDLE,
+      type: ENTITY_TYPE_ENUM.BURSTS
+    });
+    
+    
+    DataManager.Instance.bursts.push(burstManager)
+    console.log(DataManager.Instance.bursts);
+	}
 
+ 
 	async generatePlayer() {
 		const player = createUINode();
 		player.setParent(this.stage);
@@ -116,7 +135,13 @@ export class BattleManager extends Component {
     const door = createUINode();
 		door.setParent(this.stage);
 		const doorManager = door.addComponent(DoorManager);
-		await doorManager.init();
+		await doorManager.init({
+      x: 7,
+      y: 8,
+      direction: DIRECTION_ENUM.TOP,
+      state: STATE_ENUM.IDLE,
+      type: ENTITY_TYPE_ENUM.DOOR
+    });
     DataManager.Instance.door = doorManager
   }
 	// 适配地图处于屏幕正中间

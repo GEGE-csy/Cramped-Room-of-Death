@@ -190,7 +190,9 @@ export class PlayerManager extends Manager {
 		const enemies = DataManager.Instance.enemies.filter(
 			enemy => enemy.state !== STATE_ENUM.DEATH
 		);
-
+		const bursts = DataManager.Instance.bursts.filter(
+			burst => burst.state !== STATE_ENUM.DEATH
+		);
 		if (inputDirection === CONTROLLER_ENUM.TOP) {
 			const playerNextY = y - 1; // 人的下一个y坐标
 			if (direction === DIRECTION_ENUM.TOP) {
@@ -223,6 +225,14 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				// 地裂检测
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+          return false
+				}
+
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -791,7 +801,7 @@ export class PlayerManager extends Manager {
 				const weaponNextX = x + 2;
 				const playerNextTile = tileInfo[playerNextX][y];
 				const weaponNextTile = tileInfo[weaponNextX][y];
-        // 人或枪和门撞了
+				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
 						(weaponNextX === doorX && y === doorY)) &&
@@ -889,7 +899,7 @@ export class PlayerManager extends Manager {
 				nextY = y + 1;
 			}
 
-      // 门的碰撞检测
+			// 门的碰撞检测
 			if (
 				((x === doorX && nextY === doorY) ||
 					(nextX === doorX && y === doorY) ||

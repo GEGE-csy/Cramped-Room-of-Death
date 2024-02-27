@@ -14,6 +14,7 @@ import BlockLeftSubStateMachine from './BlockLeftSubStateMachine';
 import BlockRightSubStateMachine from './BlockRightSubStateMachine';
 import DeathSubStateMachine from './DeathSubStateMachine';
 import AttackSubStateMachine from './AttackSubStateMachine';
+import AirDeathSubStateMachine from './AirDeathSubStateMachine';
 const { ccclass, property } = _decorator;
 
 export interface IParamValue {
@@ -42,6 +43,7 @@ export class PlayerStateMachine extends StateMachine {
     this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.DEATH, getInitParamsTrigger())
+    this.params.set(PARAM_NAME_ENUM.AIR_DEATH, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.ATTACK, getInitParamsTrigger())
     this.params.set(PARAM_NAME_ENUM.DIRECTION, getInitParamsNumber())
   }
@@ -57,6 +59,7 @@ export class PlayerStateMachine extends StateMachine {
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, new BlockTurnLeftSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, new BlockTurnRightSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.DEATH, new DeathSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.DEATH, new AirDeathSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.ATTACK, new AttackSubStateMachine(this))
   }
   initAnimationEvent() {
@@ -83,6 +86,7 @@ export class PlayerStateMachine extends StateMachine {
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_LEFT):
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.DEATH):
+      case this.stateMachines.get(PARAM_NAME_ENUM.AIR_DEATH):
       case this.stateMachines.get(PARAM_NAME_ENUM.ATTACK):
         // blockfront的trigger为true，则过渡到blockfront状态
         if(this.params.get(PARAM_NAME_ENUM.BLOCK_FRONT).value) {
@@ -105,6 +109,8 @@ export class PlayerStateMachine extends StateMachine {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
         } else if(this.params.get(PARAM_NAME_ENUM.DEATH).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.DEATH)
+        } else if(this.params.get(PARAM_NAME_ENUM.AIR_DEATH).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.AIR_DEATH)
         } else if(this.params.get(PARAM_NAME_ENUM.ATTACK).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.ATTACK)
         } else { // 触发set currentState

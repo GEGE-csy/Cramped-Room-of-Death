@@ -4,6 +4,7 @@ import { ITile } from "../Levels"
 import { DoorManager } from "../Scripts/Door/DoorManager"
 import { PlayerManager } from "../Scripts/Player/PlayerManager"
 import { TileManager } from "../Scripts/Tile/TileManager"
+import { BurstManager } from "../Scripts/Burst/BurstManager"
 
 // 数据中心
 export default class DataManager extends Singleton {
@@ -14,6 +15,7 @@ export default class DataManager extends Singleton {
   player: PlayerManager
   enemies: EnemyManager[]
   door: DoorManager
+  bursts: BurstManager[]
   mapInfo: Array<ITile[]> = []
   tileInfo: Array<TileManager[]> = []
   mapRowCount: number
@@ -29,6 +31,7 @@ export default class DataManager extends Singleton {
 
     this.player = null
     this.door = null
+    this.bursts = []
     this.enemies = []
   }
 }
