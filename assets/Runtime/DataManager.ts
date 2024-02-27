@@ -6,6 +6,7 @@ import { PlayerManager } from "../Scripts/Player/PlayerManager"
 import { TileManager } from "../Scripts/Tile/TileManager"
 import { BurstManager } from "../Scripts/Burst/BurstManager"
 import { SpikesManager } from "../Scripts/Spikes/SpikesManager"
+import { SmokeManager } from "../Scripts/Smoke/SmokeManager"
 
 // 数据中心
 export default class DataManager extends Singleton {
@@ -18,6 +19,7 @@ export default class DataManager extends Singleton {
   door: DoorManager
   bursts: BurstManager[]
   spikes: SpikesManager[]
+  smoke: SmokeManager[]
   mapInfo: Array<ITile[]> = []
   tileInfo: Array<TileManager[]> = []
   mapRowCount: number
@@ -36,5 +38,6 @@ export default class DataManager extends Singleton {
     this.bursts = []
     this.enemies = []
     this.spikes = []
+    this.smoke = []
   }
 }

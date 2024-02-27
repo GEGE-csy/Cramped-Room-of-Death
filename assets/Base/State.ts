@@ -11,7 +11,8 @@ export default class State {
 	constructor(
 		private fsm: StateMachine,
 		private path: string,
-		private wrapMode: AnimationClip.WrapMode = AnimationClip.WrapMode.Normal
+		private wrapMode: AnimationClip.WrapMode = AnimationClip.WrapMode.Normal,
+    private speed: number = ANIMATION_SPEED
 	) {
 		this.init();
 	}
@@ -36,7 +37,7 @@ export default class State {
 		// 最后将轨道添加到动画剪辑以应用
 		this.animationClip = new AnimationClip();
     this.animationClip.name = this.path;
-    this.animationClip.duration = frames.length * ANIMATION_SPEED; // 整个动画剪辑的周期 = 帧数 * 每s多少帧
+    this.animationClip.duration = frames.length * this.speed; // 整个动画剪辑的周期 = 帧数 * 每s多少帧
 		this.animationClip.addTrack(track);
 		this.animationClip.wrapMode = this.wrapMode;
 	}

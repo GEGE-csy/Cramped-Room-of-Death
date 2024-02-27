@@ -2,7 +2,6 @@ import { _decorator } from "cc";
 import {
 	CONTROLLER_ENUM,
 	DIRECTION_ENUM,
-	ENTITY_TYPE_ENUM,
 	EVENT_ENUM,
 	STATE_ENUM,
 } from "../../Enums";
@@ -30,6 +29,11 @@ export class PlayerManager extends Manager {
 		EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.handleInput, this);
 		EventManager.Instance.on(EVENT_ENUM.ATTACK_PLAYER, this.onDead, this);
 	}
+  onDestroy() {
+    super.onDestroy()
+    EventManager.Instance.off(EVENT_ENUM.PLAYER_CONTROL, this.handleInput);
+		EventManager.Instance.off(EVENT_ENUM.ATTACK_PLAYER, this.onDead);
+  }
 	update() {
 		this.updateXY();
 		super.update();
@@ -93,18 +97,22 @@ export class PlayerManager extends Manager {
 			case CONTROLLER_ENUM.TOP:
 				this.targetY -= 1;
 				this.isMoving = true;
+        this.showSmoke(DIRECTION_ENUM.TOP)
 				break;
 			case CONTROLLER_ENUM.BOTTOM:
 				this.targetY += 1;
 				this.isMoving = true;
+        this.showSmoke(DIRECTION_ENUM.BOTTOM)
 				break;
 			case CONTROLLER_ENUM.LEFT:
 				this.targetX -= 1;
 				this.isMoving = true;
+        this.showSmoke(DIRECTION_ENUM.LEFT)
 				break;
 			case CONTROLLER_ENUM.RIGHT:
 				this.targetX += 1;
 				this.isMoving = true;
+        this.showSmoke(DIRECTION_ENUM.RIGHT)
 				break;
 			case CONTROLLER_ENUM.TURN_LEFT:
 				if (this.direction === DIRECTION_ENUM.TOP) {
@@ -134,6 +142,9 @@ export class PlayerManager extends Manager {
 		}
 	}
 
+  showSmoke(type: DIRECTION_ENUM) {
+    EventManager.Instance.emit(EVENT_ENUM.SHOW_SMOKE, this.x, this.y, type)
+  }
 	willAttack(type: CONTROLLER_ENUM) {
 		// 过滤掉死亡的敌人
 		const enemies = DataManager.Instance.enemies.filter(
@@ -202,8 +213,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextY = y - 2; // 枪的下一个y坐标
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[x][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[x]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -249,8 +260,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextY = y; // 枪的下一个y坐标
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[x][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[x]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -287,8 +298,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x - 1;
 				const weaponNextY = y - 1;
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -327,8 +338,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x + 1;
 				const weaponNextY = y - 1;
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -371,8 +382,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextY = y; // 枪的下一个y坐标
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[x][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[x]?.[weaponNextY];
 				// 人或枪和门撞了
 				if (
 					((x === doorX && playerNextY === doorY) ||
@@ -407,8 +418,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextY = y + 2; // 枪的下一个y坐标
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[x][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[x]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -448,8 +459,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x - 1;
 				const weaponNextY = y + 1;
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -488,8 +499,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x + 1;
 				const weaponNextY = y + 1;
-				const playerNextTile = tileInfo[x][playerNextY];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[x]?.[playerNextY];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 
 				// 人或枪和门撞了
 				if (
@@ -532,8 +543,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x - 1;
 				const weaponNextY = y - 1;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -571,8 +582,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x - 1;
 				const weaponNextY = y + 1;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -609,8 +620,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextX = x - 2;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][y];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[y];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -647,8 +658,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextX = x;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][y];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[y];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -687,8 +698,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x + 1;
 				const weaponNextY = y - 1;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -726,8 +737,8 @@ export class PlayerManager extends Manager {
 				}
 				const weaponNextX = x + 1;
 				const weaponNextY = y + 1;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][weaponNextY];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[weaponNextY];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -764,8 +775,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextX = x;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][y];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[y];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -799,8 +810,8 @@ export class PlayerManager extends Manager {
 					return true;
 				}
 				const weaponNextX = x + 2;
-				const playerNextTile = tileInfo[playerNextX][y];
-				const weaponNextTile = tileInfo[weaponNextX][y];
+				const playerNextTile = tileInfo[playerNextX]?.[y];
+				const weaponNextTile = tileInfo[weaponNextX]?.[y];
 				// 人或枪和门撞了
 				if (
 					((playerNextX === doorX && y === doorY) ||
@@ -873,9 +884,9 @@ export class PlayerManager extends Manager {
 			}
 
 			if (
-				(!tileInfo[x][nextY] || tileInfo[x][nextY].turnable) &&
-				(!tileInfo[nextX][y] || tileInfo[nextX][y].turnable) &&
-				(!tileInfo[nextX][nextY] || tileInfo[nextX][nextY].turnable)
+				(!tileInfo[x]?.[nextY] || tileInfo[x]?.[nextY].turnable) &&
+				(!tileInfo[nextX]?.[y] || tileInfo[nextX]?.[y].turnable) &&
+				(!tileInfo[nextX]?.[nextY] || tileInfo[nextX]?.[nextY].turnable)
 			) {
 				// 人和枪都能走
 			} else {
@@ -924,8 +935,9 @@ export class PlayerManager extends Manager {
 			}
 
 			if (
-				(!tileInfo[x][nextY] || tileInfo[x][nextY].turnable) &&
-				(!tileInfo[nextX][nextY] || tileInfo[nextX][nextY].turnable)
+				(!tileInfo[x]?.[nextY] || tileInfo[x]?.[nextY].turnable) &&
+        (!tileInfo[nextX]?.[y] || tileInfo[nextX]?.[y].turnable) &&
+				(!tileInfo[nextX]?.[nextY] || tileInfo[nextX]?.[nextY].turnable)
 			) {
 			} else {
 				this.state = STATE_ENUM.BLOCK_TURN_RIGHT;
