@@ -5,7 +5,7 @@ import Levels, { ILevel } from "../../Levels";
 import DataManager from "../../Runtime/DataManager";
 import { TILE_HEIGHT, TILE_WIDTH } from "../Tile/TileManager";
 import EventManager from "../../Runtime/EventManager";
-import { DIRECTION_ENUM, ENTITY_TYPE_ENUM, EVENT_ENUM, STATE_ENUM } from "../../Enums";
+import { ENTITY_TYPE_ENUM, EVENT_ENUM, STATE_ENUM } from "../../Enums";
 import { PlayerManager } from "../Player/PlayerManager";
 import { WoodenSkeletonManager } from "../WoodenSkeleton/WoodenSkeletonManager";
 import { DoorManager } from "../Door/DoorManager";
@@ -20,7 +20,9 @@ export class BattleManager extends Component {
 	stage: Node;
 
 	onLoad() {
+    DataManager.Instance.levelIndex = 1
 		EventManager.Instance.on(EVENT_ENUM.NEXT_LEVEL, this.nextLevel, this);
+    EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk, this);
 	}
 
 	onDestroy() {
@@ -45,7 +47,7 @@ export class BattleManager extends Component {
       this.generateBursts();
       this.generateSpikes();
 			this.generatePlayer();
-			// this.generateEnemies();
+			this.generateEnemies();
       this.generateDoor()
 		}
 	}
@@ -73,91 +75,63 @@ export class BattleManager extends Component {
 
 		this.adaptPosition();
 	}
-  async generateBursts() {
-		const bursts = createUINode();
-		bursts.setParent(this.stage);
-		const burstManager = bursts.addComponent(BurstManager);
-		await burstManager.init({
-      x: 2,
-      y: 3,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.BURSTS
-    });
-    
-    
-    DataManager.Instance.bursts.push(burstManager)
-    console.log(DataManager.Instance.bursts);
-	}
 
- 
 	async generatePlayer() {
 		const player = createUINode();
 		player.setParent(this.stage);
 		const playerManager = player.addComponent(PlayerManager);
-		await playerManager.init({
-      x: 2,
-      y: 8,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.PLAYER
-    });
+		await playerManager.init(this.level.player);
     DataManager.Instance.player = playerManager
     // 敌人比玩家先渲染，需要触发事件让敌人改变方向面向玩家
     EventManager.Instance.emit(EVENT_ENUM.PLAYER_BORN, true)
 	}
 
 	async generateEnemies() {
-		const enemy = createUINode();
-		enemy.setParent(this.stage);
-		const woodenSkeletonManager = enemy.addComponent(WoodenSkeletonManager);
-		await woodenSkeletonManager.init({
-      x: 2,
-      y: 4,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.SKELETON_WOODEN
-    });
-    DataManager.Instance.enemies.push(woodenSkeletonManager)
+    const promise = []
+    for(let i = 0; i < this.level.enemies.length; i++) {
+      const enemy = this.level.enemies[i]
+      const node = createUINode();
+      node.setParent(this.stage);
+      const type = enemy.type === ENTITY_TYPE_ENUM.SKELETON_WOODEN ? WoodenSkeletonManager : IronSkeletonManager
+      const manager = node.addComponent(type);
+      promise.push(manager.init(enemy))
+      DataManager.Instance.enemies.push(manager)
+    }
+    await Promise.all(promise)
+	}
 
-    const enemy2 = createUINode();
-		enemy2.setParent(this.stage);
-		const ironSkeletonManager = enemy2.addComponent(IronSkeletonManager);
-		await ironSkeletonManager.init({
-      x: 2,
-      y: 2,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.SKELETON_IRON
-    });
-    DataManager.Instance.enemies.push(ironSkeletonManager)
+  async generateBursts() {
+    const promise = []
+    for(let i = 0; i < this.level.bursts.length; i++) {
+      const burst = this.level.bursts[i]
+      const node = createUINode();
+      node.setParent(this.stage);
+      const burstsManager = node.addComponent(BurstManager);
+      promise.push(burstsManager.init(burst))
+      DataManager.Instance.bursts.push(burstsManager)
+    }
+    await Promise.all(promise)
 	}
 
   async generateDoor() {
     const door = createUINode();
 		door.setParent(this.stage);
 		const doorManager = door.addComponent(DoorManager);
-		await doorManager.init({
-      x: 7,
-      y: 8,
-      direction: DIRECTION_ENUM.TOP,
-      state: STATE_ENUM.IDLE,
-      type: ENTITY_TYPE_ENUM.DOOR
-    });
+		await doorManager.init(this.level.door);
     DataManager.Instance.door = doorManager
   }
 
   async generateSpikes() {
-    const spikes = createUINode();
-		spikes.setParent(this.stage);
-		const spikesManager = spikes.addComponent(SpikesManager);
-		await spikesManager.init({
-      x: 2,
-      y: 6,
-      count: 0,
-      type: ENTITY_TYPE_ENUM.SPIKE_FOUR
-    });
-    DataManager.Instance.spikes.push(spikesManager)
+    const promise = []
+    for(let i = 0; i < this.level.spikes.length; i++) {
+      const spike = this.level.spikes[i]
+      const node = createUINode();
+      node.setParent(this.stage);
+      const spikesManager = node.addComponent(SpikesManager);
+      promise.push(spikesManager.init(spike))
+      DataManager.Instance.spikes.push(spikesManager)
+    }
+    await Promise.all(promise)
   }
 	// 适配地图处于屏幕正中间
 	adaptPosition() {
@@ -167,4 +141,12 @@ export class BattleManager extends Component {
 
 		this.stage.setPosition(-distanceX, distanceY);
 	}
+  // 检查是否到达终点
+  checkOk() {
+    const { x: playerX, y:playerY } = DataManager.Instance.player
+    const { x: doorX, y:doorY, state: doorState } = DataManager.Instance.door
+    if(playerX === doorX && playerY === doorY && doorState === STATE_ENUM.DEATH) {
+      EventManager.Instance.emit(EVENT_ENUM.NEXT_LEVEL)
+    }
+  }
 }
