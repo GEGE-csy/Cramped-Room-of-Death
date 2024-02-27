@@ -11,6 +11,7 @@ import { WoodenSkeletonManager } from "../WoodenSkeleton/WoodenSkeletonManager";
 import { DoorManager } from "../Door/DoorManager";
 import { IronSkeletonManager } from "../IronSkeleton/IronSkeletonManager";
 import { BurstManager } from "../Burst/BurstManager";
+import { SpikesManager } from "../Spikes/SpikesManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("BattleManager")
@@ -42,6 +43,7 @@ export class BattleManager extends Component {
 			DataManager.Instance.mapColumnCount = this.level.mapInfo[0].length || 0;
 			this.generateTileMap();
       this.generateBursts();
+      this.generateSpikes();
 			this.generatePlayer();
 			// this.generateEnemies();
       this.generateDoor()
@@ -143,6 +145,19 @@ export class BattleManager extends Component {
       type: ENTITY_TYPE_ENUM.DOOR
     });
     DataManager.Instance.door = doorManager
+  }
+
+  async generateSpikes() {
+    const spikes = createUINode();
+		spikes.setParent(this.stage);
+		const spikesManager = spikes.addComponent(SpikesManager);
+		await spikesManager.init({
+      x: 2,
+      y: 6,
+      count: 0,
+      type: ENTITY_TYPE_ENUM.SPIKE_FOUR
+    });
+    DataManager.Instance.spikes.push(spikesManager)
   }
 	// 适配地图处于屏幕正中间
 	adaptPosition() {

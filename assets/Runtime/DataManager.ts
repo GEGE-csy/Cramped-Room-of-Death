@@ -5,6 +5,7 @@ import { DoorManager } from "../Scripts/Door/DoorManager"
 import { PlayerManager } from "../Scripts/Player/PlayerManager"
 import { TileManager } from "../Scripts/Tile/TileManager"
 import { BurstManager } from "../Scripts/Burst/BurstManager"
+import { SpikesManager } from "../Scripts/Spikes/SpikesManager"
 
 // 数据中心
 export default class DataManager extends Singleton {
@@ -16,6 +17,7 @@ export default class DataManager extends Singleton {
   enemies: EnemyManager[]
   door: DoorManager
   bursts: BurstManager[]
+  spikes: SpikesManager[]
   mapInfo: Array<ITile[]> = []
   tileInfo: Array<TileManager[]> = []
   mapRowCount: number
@@ -33,5 +35,6 @@ export default class DataManager extends Singleton {
     this.door = null
     this.bursts = []
     this.enemies = []
+    this.spikes = []
   }
 }

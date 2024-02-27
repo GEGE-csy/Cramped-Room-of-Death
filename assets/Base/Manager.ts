@@ -43,7 +43,7 @@ export class Manager extends Component {
 
     this.x = params.x
     this.y = params.y
-    // this.type = params.type
+    this.type = params.type
     this.direction = params.direction
     this.state = params.state
   }  
