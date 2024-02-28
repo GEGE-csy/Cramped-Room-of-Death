@@ -59,7 +59,7 @@ export class PlayerStateMachine extends StateMachine {
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_LEFT, new BlockTurnLeftSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT, new BlockTurnRightSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.DEATH, new DeathSubStateMachine(this))
-    this.stateMachines.set(PARAM_NAME_ENUM.DEATH, new AirDeathSubStateMachine(this))
+    this.stateMachines.set(PARAM_NAME_ENUM.AIR_DEATH, new AirDeathSubStateMachine(this))
     this.stateMachines.set(PARAM_NAME_ENUM.ATTACK, new AttackSubStateMachine(this))
   }
   initAnimationEvent() {
@@ -76,6 +76,7 @@ export class PlayerStateMachine extends StateMachine {
   run() {
     switch(this.currentState) {
       case this.stateMachines.get(PARAM_NAME_ENUM.IDLE):
+      case this.stateMachines.get(PARAM_NAME_ENUM.ATTACK):
       case this.stateMachines.get(PARAM_NAME_ENUM.TURN_LEFT):
       case this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT):
@@ -86,9 +87,13 @@ export class PlayerStateMachine extends StateMachine {
       case this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_TURN_RIGHT):
       case this.stateMachines.get(PARAM_NAME_ENUM.DEATH):
       case this.stateMachines.get(PARAM_NAME_ENUM.AIR_DEATH):
-      case this.stateMachines.get(PARAM_NAME_ENUM.ATTACK):
+        if(this.params.get(PARAM_NAME_ENUM.DEATH).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.DEATH)
+        } else if(this.params.get(PARAM_NAME_ENUM.AIR_DEATH).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.AIR_DEATH)
+        }
         // blockfront的trigger为true，则过渡到blockfront状态
-        if(this.params.get(PARAM_NAME_ENUM.BLOCK_FRONT).value) {
+        else if(this.params.get(PARAM_NAME_ENUM.BLOCK_FRONT).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_FRONT)
         } else if(this.params.get(PARAM_NAME_ENUM.BLOCK_BACK).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.BLOCK_BACK)
@@ -104,14 +109,10 @@ export class PlayerStateMachine extends StateMachine {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.TURN_LEFT)
         } else if(this.params.get(PARAM_NAME_ENUM.TURN_RIGHT).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.TURN_RIGHT)
-        } else if(this.params.get(PARAM_NAME_ENUM.IDLE).value) {
-          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
-        } else if(this.params.get(PARAM_NAME_ENUM.DEATH).value) {
-          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.DEATH)
-        } else if(this.params.get(PARAM_NAME_ENUM.AIR_DEATH).value) {
-          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.AIR_DEATH)
         } else if(this.params.get(PARAM_NAME_ENUM.ATTACK).value) {
           this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.ATTACK)
+        } else if(this.params.get(PARAM_NAME_ENUM.IDLE).value) {
+          this.currentState = this.stateMachines.get(PARAM_NAME_ENUM.IDLE)
         } else { // 触发set currentState
           this.currentState = this.currentState
         }

@@ -52,6 +52,9 @@ export default abstract class StateMachine extends Component {
   }
 
   set currentState(newState) {
+    if (!newState) {
+      return
+    }
     this._currentState = newState
     // currentState被修改时应该要执行动画了
     this._currentState.run()

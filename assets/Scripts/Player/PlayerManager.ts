@@ -220,8 +220,8 @@ export class PlayerManager extends Manager {
 				} else if (this.direction === DIRECTION_ENUM.RIGHT) {
 					this.direction = DIRECTION_ENUM.TOP;
 				}
+        this.state = STATE_ENUM.TURN_LEFT;
 				EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END);
-				this.state = STATE_ENUM.TURN_LEFT;
 				break;
 			case CONTROLLER_ENUM.TURN_RIGHT:
 				if (this.direction === DIRECTION_ENUM.TOP) {
@@ -233,8 +233,8 @@ export class PlayerManager extends Manager {
 				} else if (this.direction === DIRECTION_ENUM.RIGHT) {
 					this.direction = DIRECTION_ENUM.BOTTOM;
 				}
+        this.state = STATE_ENUM.TURN_RIGHT;
 				EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END);
-				this.state = STATE_ENUM.TURN_RIGHT;
         break
 		}
 	}
