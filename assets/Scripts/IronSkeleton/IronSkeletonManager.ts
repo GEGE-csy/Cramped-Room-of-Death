@@ -13,6 +13,6 @@ export class IronSkeletonManager extends EnemyManager {
   async init(params: IEntity) {
     this.fsm = this.addComponent(IronSkeletonStateMachine)
     await this.fsm.init()
-    super.init(params)  
+    super.init(params)
   }  
 }
