@@ -36,7 +36,6 @@ export class SmokeStateMachine extends StateMachine {
     // 监听动画完成，如果执行的是turn相关的动画，要恢复到idle状态
     this.animationComponent.on(Animation.EventType.FINISHED, () => {
       const name = this.animationComponent.defaultClip.name
-      console.log('name', name)
       const whiteList = ['idle']
       if(whiteList.some(v => name.includes(v))) {
         this.node.getComponent(Manager).state = STATE_ENUM.DEATH

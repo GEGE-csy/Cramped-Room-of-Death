@@ -1,6 +1,6 @@
-import { _decorator, Component, director, Node } from "cc";
+import { _decorator, Color, Component, director, Label, Node } from "cc";
 import { TileMapManager } from "../Tile/TileMapManager";
-import { createUINode } from "../../Utils";
+import { createUINode, local } from "../../Utils";
 import Levels, { ILevel } from "../../Levels";
 import DataManager, { IRecord } from "../../Runtime/DataManager";
 import { TILE_HEIGHT, TILE_WIDTH } from "../Tile/TileManager";
@@ -29,41 +29,57 @@ export class BattleManager extends Component {
 	stage: Node;
 	// smoke 的层，防止遮挡住人
 	private smokeLayer: Node = null;
-  private initd = false
+	private initd = false;
 	onLoad() {
-		DataManager.Instance.levelIndex = 1;
 		EventManager.Instance.on(EVENT_ENUM.NEXT_LEVEL, this.nextLevel, this);
 		EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk, this);
 		EventManager.Instance.on(EVENT_ENUM.SHOW_SMOKE, this.generateSmoke, this);
 		EventManager.Instance.on(EVENT_ENUM.RECORD_STEP, this.record, this);
 		EventManager.Instance.on(EVENT_ENUM.REVOKE_STEP, this.revoke, this);
-    EventManager.Instance.on(EVENT_ENUM.RESTART_LEVEL, this.initLevel, this);
+		EventManager.Instance.on(EVENT_ENUM.RESTART_LEVEL, this.initLevel, this);
 		EventManager.Instance.on(EVENT_ENUM.OUT_BATTLE, this.outBattle, this);
+		EventManager.Instance.on(EVENT_ENUM.GAME_OVER, this.gameOver, this);
 	}
 
 	onDestroy() {
 		EventManager.Instance.off(EVENT_ENUM.NEXT_LEVEL, this.nextLevel);
-		EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk);
+		EventManager.Instance.off(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk);
 		EventManager.Instance.off(EVENT_ENUM.SHOW_SMOKE, this.generateSmoke);
 		EventManager.Instance.off(EVENT_ENUM.RECORD_STEP, this.record);
 		EventManager.Instance.off(EVENT_ENUM.REVOKE_STEP, this.revoke);
-    EventManager.Instance.off(EVENT_ENUM.RESTART_LEVEL, this.initLevel);
+		EventManager.Instance.off(EVENT_ENUM.RESTART_LEVEL, this.initLevel);
 		EventManager.Instance.off(EVENT_ENUM.OUT_BATTLE, this.outBattle);
+		EventManager.Instance.off(EVENT_ENUM.GAME_OVER, this.gameOver);
 	}
 
 	start() {
+    const level = local.get("levelIndex")
+    if(level) {
+      DataManager.Instance.levelIndex = level
+    } else {
+      DataManager.Instance.levelIndex = 1
+      local.set("levelIndex", 1)
+    }
+    console.log(level)
 		this.generateStage();
 		this.initLevel();
 	}
 
 	async initLevel() {
-		const level = Levels[`level${DataManager.Instance.levelIndex}`];
+    const levelIndex = local.get("levelIndex")
+    if(levelIndex) {
+      DataManager.Instance.levelIndex = levelIndex
+    } else {
+      DataManager.Instance.levelIndex = 1
+      local.set("levelIndex", 1)
+    }
+		let level = Levels[`level${levelIndex}`];
 		if (level) {
-      if(this.initd) {
-        await FadeManager.Instance.fadeIn()
-      } else {
-        await FadeManager.Instance.mask()
-      }
+			if (this.initd) {
+				await FadeManager.Instance.fadeIn();
+			} else {
+				await FadeManager.Instance.mask();
+			}
 			this.clearLevel();
 			this.level = level;
 			// 将当前关卡信息存入数据中心
@@ -82,18 +98,25 @@ export class BattleManager extends Component {
 			]);
 
 			await FadeManager.Instance.fadeOut();
-      this.initd = true
-		} else {
-      this.outBattle()
-    }
+			this.initd = true;
+			this.generateLevelTitle();
+		}
 	}
 
-  async outBattle() {
-    await FadeManager.Instance.fadeIn()
-    director.loadScene(SCENE_ENUM.Start)
-  }
+	async outBattle() {
+		await FadeManager.Instance.fadeIn();
+		director.loadScene(SCENE_ENUM.Start);
+	}
+
+	async gameOver() {
+		setTimeout(() => {
+			director.loadScene(SCENE_ENUM.GAME_OVER);
+		}, 1500);
+	}
+
 	nextLevel() {
 		DataManager.Instance.levelIndex++;
+		local.set("levelIndex", DataManager.Instance.levelIndex);
 		this.initLevel();
 	}
 
@@ -106,6 +129,12 @@ export class BattleManager extends Component {
 		this.stage = createUINode();
 		this.stage.setParent(this.node);
 		this.stage.addComponent(ShakeManager);
+	}
+
+	generateLevelTitle() {
+    const labelNode = this.node.children.find(item => item.name === 'Label')
+    const label = labelNode.getComponent(Label)
+    label.string = `LEVEL ${DataManager.Instance.levelIndex}`;
 	}
 
 	async generateTileMap() {
@@ -215,7 +244,7 @@ export class BattleManager extends Component {
 	adaptPosition() {
 		const { mapRowCount, mapColumnCount } = DataManager.Instance;
 		const distanceX = (TILE_WIDTH * mapRowCount) / 2;
-		const distanceY = (TILE_HEIGHT * mapColumnCount) / 2 + 80;
+		const distanceY = (TILE_HEIGHT * mapColumnCount) / 2 + 100;
 
 		this.stage.getComponent(ShakeManager).stop();
 		this.stage.setPosition(-distanceX, distanceY);
@@ -306,6 +335,6 @@ export class BattleManager extends Component {
 			DataManager.Instance.door.y = data.door.y;
 			DataManager.Instance.door.state = data.door.state;
 			DataManager.Instance.door.direction = data.door.direction;
-		} 
+		}
 	}
 }

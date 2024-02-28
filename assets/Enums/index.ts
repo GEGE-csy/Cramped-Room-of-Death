@@ -29,7 +29,8 @@ export enum EVENT_ENUM {
   RECORD_STEP = 'RECORD_STEP',
   REVOKE_STEP = 'REVOKE_STEP',
   RESTART_LEVEL = 'RESTART_LEVEL',
-  OUT_BATTLE = 'OUT_BATTLE'
+  OUT_BATTLE = 'OUT_BATTLE',
+  GAME_OVER = 'GAME_OVER'
 }
 
 // 点击方向
@@ -145,4 +146,5 @@ export enum SCENE_ENUM {
   Loading = 'Loading',
   Start = 'Start',
   Battle = 'Battle',
+  GAME_OVER = 'Over'
 }

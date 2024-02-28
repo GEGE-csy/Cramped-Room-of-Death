@@ -66,6 +66,8 @@ export class PlayerManager extends Manager {
 
 	onDead(type: STATE_ENUM) {
 		this.state = type;
+    console.log(type)
+    EventManager.Instance.emit(EVENT_ENUM.GAME_OVER);
 	}
 
 	onAttackShake(type: SHAKE_TYPE_ENUM) {
@@ -233,6 +235,7 @@ export class PlayerManager extends Manager {
 				}
 				EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END);
 				this.state = STATE_ENUM.TURN_RIGHT;
+        break
 		}
 	}
 
@@ -291,7 +294,7 @@ export class PlayerManager extends Manager {
 			mapRowCount: row,
 			mapColumnCount: column,
 		} = DataManager.Instance;
-		const { x: doorX, y: doorY, state: doorState } = DataManager.Instance.door;
+		const { x: doorX, y: doorY, state: doorState } = DataManager.Instance.door || {}
 		const enemies = DataManager.Instance.enemies.filter(
 			enemy => enemy.state !== STATE_ENUM.DEATH
 		);

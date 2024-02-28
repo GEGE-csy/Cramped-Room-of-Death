@@ -1042,7 +1042,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": -300,
+      "y": -280,
       "z": 0
     },
     "_lrot": {
@@ -2183,7 +2183,7 @@
     "_left": 0,
     "_right": 0,
     "_top": 0,
-    "_bottom": 70,
+    "_bottom": 90,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
     "_isAbsLeft": true,
@@ -2211,7 +2211,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Footer",
+    "_name": "Label",
     "_objFlags": 0,
     "_parent": {
       "__id__": 2
@@ -2232,8 +2232,8 @@
     "_prefab": null,
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 0,
-      "y": -439.8,
+      "x": -0.009999999999990905,
+      "y": -434.8,
       "z": 0
     },
     "_lrot": {
@@ -2256,7 +2256,7 @@
       "y": 0,
       "z": 0
     },
-    "_id": "93UIj0hrxBlJvaAfr9MAKx"
+    "_id": "51oapIyXhFQbqYK8laT8IJ"
   },
   {
     "__type__": "cc.UITransform",
@@ -2269,7 +2269,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 234.46,
+      "width": 203.6,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -2277,7 +2277,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "_id": "9cwcxW2ohKH6YQ3NxRpi7y"
+    "_id": "f1uJq24n1FV4vFJLVjmiIc"
   },
   {
     "__type__": "cc.Label",
@@ -2294,29 +2294,32 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 176,
+      "g": 182,
+      "b": 167,
       "a": 255
     },
-    "_string": "Cramped Room of Death",
+    "_string": "level 1",
     "_horizontalAlign": 1,
-    "_verticalAlign": 1,
-    "_actualFontSize": 20,
-    "_fontSize": 20,
-    "_fontFamily": "Arial",
+    "_verticalAlign": 0,
+    "_actualFontSize": 40,
+    "_fontSize": 40,
+    "_fontFamily": "",
     "_lineHeight": 40,
     "_overflow": 0,
     "_enableWrapText": true,
-    "_font": null,
-    "_isSystemFontUsed": true,
+    "_font": {
+      "__uuid__": "e3df1d75-f3fb-4b19-9b39-816e406d56ba",
+      "__expectedType__": "cc.TTFFont"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": true,
+    "_isBold": false,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_id": "a6KeDwGctGNouQ78hQshC8"
+    "_id": "11FIIcGnpCFKVXRlFbEPfQ"
   },
   {
     "__type__": "cc.Widget",
@@ -2331,8 +2334,8 @@
     "_target": null,
     "_left": 0,
     "_right": 0,
-    "_top": 0,
-    "_bottom": 15,
+    "_top": 180,
+    "_bottom": 20,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
     "_isAbsLeft": true,
@@ -2342,10 +2345,10 @@
     "_isAbsHorizontalCenter": true,
     "_isAbsVerticalCenter": true,
     "_originalWidth": 0,
-    "_originalHeight": 0,
+    "_originalHeight": 50.4,
     "_alignMode": 2,
     "_lockFlags": 0,
-    "_id": "05WKYEZLZMi7nqweHpoD0y"
+    "_id": "0a9EIGwk5NkZMlJsDyY3IV"
   },
   {
     "__type__": "cc.UITransform",
