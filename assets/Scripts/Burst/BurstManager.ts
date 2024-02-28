@@ -1,6 +1,6 @@
 
 import { UITransform, _decorator } from 'cc';
-import { EVENT_ENUM, STATE_ENUM } from '../../Enums';
+import { DIRECTION_ENUM, EVENT_ENUM, SHAKE_TYPE_ENUM, STATE_ENUM } from '../../Enums';
 import EventManager from '../../Runtime/EventManager';
 import DataManager from '../../Runtime/DataManager';
 import { IEntity } from '../../Levels';
@@ -38,6 +38,7 @@ export class BurstManager extends Manager {
       this.state = STATE_ENUM.ATTACK
     } else if(this.state === STATE_ENUM.ATTACK){
       this.state = STATE_ENUM.DEATH
+      EventManager.Instance.emit(EVENT_ENUM.SCREEN_SHAKE, SHAKE_TYPE_ENUM.BOTTOM)
       // 如果裂开的时候，人在陷阱上，则在空中死
       if(this.x === playerX && this.y === playerY) {
         EventManager.Instance.emit(EVENT_ENUM.ATTACK_PLAYER, STATE_ENUM.AIR_DEATH)

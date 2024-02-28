@@ -3,6 +3,7 @@ import {
 	CONTROLLER_ENUM,
 	DIRECTION_ENUM,
 	EVENT_ENUM,
+	SHAKE_TYPE_ENUM,
 	STATE_ENUM,
 } from "../../Enums";
 import EventManager from "../../Runtime/EventManager";
@@ -29,11 +30,11 @@ export class PlayerManager extends Manager {
 		EventManager.Instance.on(EVENT_ENUM.PLAYER_CONTROL, this.handleInput, this);
 		EventManager.Instance.on(EVENT_ENUM.ATTACK_PLAYER, this.onDead, this);
 	}
-  onDestroy() {
-    super.onDestroy()
-    EventManager.Instance.off(EVENT_ENUM.PLAYER_CONTROL, this.handleInput);
+	onDestroy() {
+		super.onDestroy();
+		EventManager.Instance.off(EVENT_ENUM.PLAYER_CONTROL, this.handleInput);
 		EventManager.Instance.off(EVENT_ENUM.ATTACK_PLAYER, this.onDead);
-  }
+	}
 	update() {
 		this.updateXY();
 		super.update();
@@ -66,6 +67,11 @@ export class PlayerManager extends Manager {
 	onDead(type: STATE_ENUM) {
 		this.state = type;
 	}
+
+	onAttackShake(type: SHAKE_TYPE_ENUM) {
+		EventManager.Instance.emit(EVENT_ENUM.SCREEN_SHAKE, type);
+	}
+
 	handleInput(inputDirection: CONTROLLER_ENUM) {
 		if (this.isMoving) {
 			return;
@@ -80,39 +86,127 @@ export class PlayerManager extends Manager {
 		}
 		const id = this.willAttack(inputDirection);
 		if (id) {
+			EventManager.Instance.emit(EVENT_ENUM.RECORD_STEP);
+			this.state = STATE_ENUM.ATTACK;
 			// 可能有多个敌人，需要拿到enemy id判断是哪个敌人死了
 			EventManager.Instance.emit(EVENT_ENUM.ATTACK_ENEMY, id);
+			EventManager.Instance.emit(EVENT_ENUM.PLAYER_MOVE_END);
 			EventManager.Instance.emit(EVENT_ENUM.DOOR_OPEN);
 			return;
 		}
+		// 碰撞了
 		if (this.willBlock(inputDirection)) {
-			// 撞了
-			console.log("block");
+			if (inputDirection === CONTROLLER_ENUM.TOP) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.TOP
+				);
+			} else if (inputDirection === CONTROLLER_ENUM.BOTTOM) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.BOTTOM
+				);
+			} else if (inputDirection === CONTROLLER_ENUM.LEFT) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.LEFT
+				);
+			} else if (inputDirection === CONTROLLER_ENUM.RIGHT) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.RIGHT
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_LEFT &&
+				this.direction === DIRECTION_ENUM.TOP
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.LEFT
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_LEFT &&
+				this.direction === DIRECTION_ENUM.LEFT
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.BOTTOM
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_LEFT &&
+				this.direction === DIRECTION_ENUM.BOTTOM
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.RIGHT
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_LEFT &&
+				this.direction === DIRECTION_ENUM.RIGHT
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.TOP
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_RIGHT &&
+				this.direction === DIRECTION_ENUM.TOP
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.RIGHT
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_RIGHT &&
+				this.direction === DIRECTION_ENUM.LEFT
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.TOP
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_RIGHT &&
+				this.direction === DIRECTION_ENUM.BOTTOM
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.LEFT
+				);
+			} else if (
+				inputDirection === CONTROLLER_ENUM.TURN_RIGHT &&
+				this.direction === DIRECTION_ENUM.RIGHT
+			) {
+				EventManager.Instance.emit(
+					EVENT_ENUM.SCREEN_SHAKE,
+					SHAKE_TYPE_ENUM.BOTTOM
+				);
+			}
 			return;
 		}
 		this.move(inputDirection);
 	}
 	move(inputDirection: CONTROLLER_ENUM) {
+		EventManager.Instance.emit(EVENT_ENUM.RECORD_STEP);
 		switch (inputDirection) {
 			case CONTROLLER_ENUM.TOP:
 				this.targetY -= 1;
 				this.isMoving = true;
-        this.showSmoke(DIRECTION_ENUM.TOP)
+				this.showSmoke(DIRECTION_ENUM.TOP);
 				break;
 			case CONTROLLER_ENUM.BOTTOM:
 				this.targetY += 1;
 				this.isMoving = true;
-        this.showSmoke(DIRECTION_ENUM.BOTTOM)
+				this.showSmoke(DIRECTION_ENUM.BOTTOM);
 				break;
 			case CONTROLLER_ENUM.LEFT:
 				this.targetX -= 1;
 				this.isMoving = true;
-        this.showSmoke(DIRECTION_ENUM.LEFT)
+				this.showSmoke(DIRECTION_ENUM.LEFT);
 				break;
 			case CONTROLLER_ENUM.RIGHT:
 				this.targetX += 1;
 				this.isMoving = true;
-        this.showSmoke(DIRECTION_ENUM.RIGHT)
+				this.showSmoke(DIRECTION_ENUM.RIGHT);
 				break;
 			case CONTROLLER_ENUM.TURN_LEFT:
 				if (this.direction === DIRECTION_ENUM.TOP) {
@@ -142,9 +236,9 @@ export class PlayerManager extends Manager {
 		}
 	}
 
-  showSmoke(type: DIRECTION_ENUM) {
-    EventManager.Instance.emit(EVENT_ENUM.SHOW_SMOKE, this.x, this.y, type)
-  }
+	showSmoke(type: DIRECTION_ENUM) {
+		EventManager.Instance.emit(EVENT_ENUM.SHOW_SMOKE, this.x, this.y, type);
+	}
 	willAttack(type: CONTROLLER_ENUM) {
 		// 过滤掉死亡的敌人
 		const enemies = DataManager.Instance.enemies.filter(
@@ -241,7 +335,7 @@ export class PlayerManager extends Manager {
 					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
 					(!weaponNextTile || weaponNextTile.turnable)
 				) {
-          return false
+					return false;
 				}
 
 				// 人和枪都能走
@@ -262,6 +356,13 @@ export class PlayerManager extends Manager {
 				const weaponNextY = y; // 枪的下一个y坐标
 				const playerNextTile = tileInfo[x]?.[playerNextY];
 				const weaponNextTile = tileInfo[x]?.[weaponNextY];
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 
 				// 人或枪和门撞了
 				if (
@@ -321,6 +422,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -361,7 +469,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
-
+				// 判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -400,6 +514,13 @@ export class PlayerManager extends Manager {
 						this.state = STATE_ENUM.BLOCK_BACK;
 						return true;
 					}
+				}
+				// 判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
 				}
 
 				// 人和枪都能走
@@ -442,6 +563,13 @@ export class PlayerManager extends Manager {
 					}
 				}
 
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -482,6 +610,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -521,6 +656,13 @@ export class PlayerManager extends Manager {
 						this.state = STATE_ENUM.BLOCK_RIGHT;
 						return true;
 					}
+				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === x && burst.y === playerNextY) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
 				}
 				// 人和枪都能走
 				if (
@@ -565,6 +707,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -604,6 +753,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -642,6 +798,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
+				}
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -676,6 +839,13 @@ export class PlayerManager extends Manager {
 						this.state = STATE_ENUM.BLOCK_BACK;
 						return true;
 					}
+				}
+				//判断地裂陷阱
+				if (
+					bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+					(!weaponNextTile || weaponNextTile.turnable)
+				) {
+					return false;
 				}
 				// 人和枪都能走
 				if (
@@ -720,6 +890,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+         //判断地裂陷阱
+         if (
+          bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+          (!weaponNextTile || weaponNextTile.turnable)
+        ) {
+          return false
+        }
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -759,6 +936,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+         //判断地裂陷阱
+         if (
+          bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+          (!weaponNextTile || weaponNextTile.turnable)
+        ) {
+          return false
+        }
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -794,6 +978,13 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+         //判断地裂陷阱
+         if (
+          bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+          (!weaponNextTile || weaponNextTile.turnable)
+        ) {
+          return false
+        }
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -832,6 +1023,14 @@ export class PlayerManager extends Manager {
 						return true;
 					}
 				}
+        //判断地裂陷阱
+        if (
+          bursts.some(burst => burst.x === playerNextX && burst.y === y) &&
+          (!weaponNextTile || weaponNextTile.turnable)
+        ) {
+          return false
+        }
+
 				// 人和枪都能走
 				if (
 					playerNextTile &&
@@ -936,7 +1135,7 @@ export class PlayerManager extends Manager {
 
 			if (
 				(!tileInfo[x]?.[nextY] || tileInfo[x]?.[nextY].turnable) &&
-        (!tileInfo[nextX]?.[y] || tileInfo[nextX]?.[y].turnable) &&
+				(!tileInfo[nextX]?.[y] || tileInfo[nextX]?.[y].turnable) &&
 				(!tileInfo[nextX]?.[nextY] || tileInfo[nextX]?.[nextY].turnable)
 			) {
 			} else {

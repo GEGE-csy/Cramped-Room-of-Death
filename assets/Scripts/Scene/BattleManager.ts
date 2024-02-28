@@ -1,14 +1,15 @@
-import { _decorator, Component, Node } from "cc";
+import { _decorator, Component, director, Node } from "cc";
 import { TileMapManager } from "../Tile/TileMapManager";
 import { createUINode } from "../../Utils";
 import Levels, { ILevel } from "../../Levels";
-import DataManager from "../../Runtime/DataManager";
+import DataManager, { IRecord } from "../../Runtime/DataManager";
 import { TILE_HEIGHT, TILE_WIDTH } from "../Tile/TileManager";
 import EventManager from "../../Runtime/EventManager";
 import {
 	DIRECTION_ENUM,
 	ENTITY_TYPE_ENUM,
 	EVENT_ENUM,
+	SCENE_ENUM,
 	STATE_ENUM,
 } from "../../Enums";
 import { PlayerManager } from "../Player/PlayerManager";
@@ -18,6 +19,8 @@ import { IronSkeletonManager } from "../IronSkeleton/IronSkeletonManager";
 import { BurstManager } from "../Burst/BurstManager";
 import { SpikesManager } from "../Spikes/SpikesManager";
 import { SmokeManager } from "../Smoke/SmokeManager";
+import { ShakeManager } from "../UI/ShakeManager";
+import FadeManager from "../../Runtime/FadeManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("BattleManager")
@@ -26,17 +29,26 @@ export class BattleManager extends Component {
 	stage: Node;
 	// smoke 的层，防止遮挡住人
 	private smokeLayer: Node = null;
-
+  private initd = false
 	onLoad() {
 		DataManager.Instance.levelIndex = 1;
 		EventManager.Instance.on(EVENT_ENUM.NEXT_LEVEL, this.nextLevel, this);
 		EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk, this);
 		EventManager.Instance.on(EVENT_ENUM.SHOW_SMOKE, this.generateSmoke, this);
+		EventManager.Instance.on(EVENT_ENUM.RECORD_STEP, this.record, this);
+		EventManager.Instance.on(EVENT_ENUM.REVOKE_STEP, this.revoke, this);
+    EventManager.Instance.on(EVENT_ENUM.RESTART_LEVEL, this.initLevel, this);
+		EventManager.Instance.on(EVENT_ENUM.OUT_BATTLE, this.outBattle, this);
 	}
 
 	onDestroy() {
 		EventManager.Instance.off(EVENT_ENUM.NEXT_LEVEL, this.nextLevel);
+		EventManager.Instance.on(EVENT_ENUM.PLAYER_MOVE_END, this.checkOk);
 		EventManager.Instance.off(EVENT_ENUM.SHOW_SMOKE, this.generateSmoke);
+		EventManager.Instance.off(EVENT_ENUM.RECORD_STEP, this.record);
+		EventManager.Instance.off(EVENT_ENUM.REVOKE_STEP, this.revoke);
+    EventManager.Instance.off(EVENT_ENUM.RESTART_LEVEL, this.initLevel);
+		EventManager.Instance.off(EVENT_ENUM.OUT_BATTLE, this.outBattle);
 	}
 
 	start() {
@@ -44,25 +56,42 @@ export class BattleManager extends Component {
 		this.initLevel();
 	}
 
-	initLevel() {
+	async initLevel() {
 		const level = Levels[`level${DataManager.Instance.levelIndex}`];
 		if (level) {
+      if(this.initd) {
+        await FadeManager.Instance.fadeIn()
+      } else {
+        await FadeManager.Instance.mask()
+      }
 			this.clearLevel();
 			this.level = level;
 			// 将当前关卡信息存入数据中心
 			DataManager.Instance.mapInfo = this.level.mapInfo;
 			DataManager.Instance.mapRowCount = this.level.mapInfo.length || 0;
 			DataManager.Instance.mapColumnCount = this.level.mapInfo[0].length || 0;
-			this.generateTileMap();
-			this.generateBursts();
-			this.generateSpikes();
-			this.generateEnemies();
-			this.generateDoor();
-			this.generateSmokeLayer();
-			this.generatePlayer();
-		}
+
+			await Promise.all([
+				this.generateTileMap(),
+				this.generateBursts(),
+				this.generateSpikes(),
+				this.generateEnemies(),
+				this.generateDoor(),
+				this.generateSmokeLayer(),
+				this.generatePlayer(),
+			]);
+
+			await FadeManager.Instance.fadeOut();
+      this.initd = true
+		} else {
+      this.outBattle()
+    }
 	}
 
+  async outBattle() {
+    await FadeManager.Instance.fadeIn()
+    director.loadScene(SCENE_ENUM.Start)
+  }
 	nextLevel() {
 		DataManager.Instance.levelIndex++;
 		this.initLevel();
@@ -76,6 +105,7 @@ export class BattleManager extends Component {
 	generateStage() {
 		this.stage = createUINode();
 		this.stage.setParent(this.node);
+		this.stage.addComponent(ShakeManager);
 	}
 
 	async generateTileMap() {
@@ -149,7 +179,7 @@ export class BattleManager extends Component {
 	}
 
 	async generateSmoke(x: number, y: number, direction: DIRECTION_ENUM) {
-    // 如果有状态为死亡的smoke，则改变其状态进行复用，避免一直生成smoke
+		// 如果有状态为死亡的smoke，则改变其状态进行复用，避免一直生成smoke
 		const deathSmoke = DataManager.Instance.smoke.find(
 			s => s.state === STATE_ENUM.DEATH
 		);
@@ -157,7 +187,7 @@ export class BattleManager extends Component {
 			deathSmoke.x = x;
 			deathSmoke.y = y;
 			deathSmoke.direction = direction;
-      deathSmoke.state = STATE_ENUM.IDLE
+			deathSmoke.state = STATE_ENUM.IDLE;
 			deathSmoke.node.setPosition(
 				x * TILE_WIDTH - TILE_WIDTH * 1.5,
 				-y * TILE_HEIGHT + TILE_HEIGHT * 1.5
@@ -177,7 +207,7 @@ export class BattleManager extends Component {
 		}
 	}
 
-	generateSmokeLayer() {
+	async generateSmokeLayer() {
 		this.smokeLayer = createUINode();
 		this.smokeLayer.setParent(this.stage);
 	}
@@ -187,6 +217,7 @@ export class BattleManager extends Component {
 		const distanceX = (TILE_WIDTH * mapRowCount) / 2;
 		const distanceY = (TILE_HEIGHT * mapColumnCount) / 2 + 80;
 
+		this.stage.getComponent(ShakeManager).stop();
 		this.stage.setPosition(-distanceX, distanceY);
 	}
 	// 检查是否到达终点
@@ -200,5 +231,81 @@ export class BattleManager extends Component {
 		) {
 			EventManager.Instance.emit(EVENT_ENUM.NEXT_LEVEL);
 		}
+	}
+
+	record() {
+		const item: IRecord = {
+			player: {
+				x: DataManager.Instance.player.targetX,
+				y: DataManager.Instance.player.targetY,
+				state:
+					DataManager.Instance.player.state === STATE_ENUM.IDLE ||
+					DataManager.Instance.player.state === STATE_ENUM.DEATH ||
+					DataManager.Instance.player.state === STATE_ENUM.AIR_DEATH
+						? DataManager.Instance.player.state
+						: STATE_ENUM.IDLE,
+				direction: DataManager.Instance.player.direction,
+				type: DataManager.Instance.player.type,
+			},
+			door: {
+				x: DataManager.Instance.door.x,
+				y: DataManager.Instance.door.y,
+				state: DataManager.Instance.door.state,
+				direction: DataManager.Instance.door.direction,
+				type: DataManager.Instance.door.type,
+			},
+			enemies: DataManager.Instance.enemies.map(
+				({ x, y, direction, state, type }) => ({ x, y, direction, state, type })
+			),
+			spikes: DataManager.Instance.spikes.map(({ x, y, count, type }) => ({
+				x,
+				y,
+				count,
+				type,
+			})),
+			bursts: DataManager.Instance.bursts.map(
+				({ x, y, direction, state, type }) => ({ x, y, direction, state, type })
+			),
+		};
+		DataManager.Instance.records.push(item);
+	}
+
+	revoke() {
+		const data = DataManager.Instance.records.pop();
+		if (data) {
+			DataManager.Instance.player.x = DataManager.Instance.player.targetX =
+				data.player.x;
+			DataManager.Instance.player.y = DataManager.Instance.player.targetY =
+				data.player.y;
+			DataManager.Instance.player.state = data.player.state;
+			DataManager.Instance.player.direction = data.player.direction;
+
+			for (let i = 0; i < data.enemies.length; i++) {
+				const item = data.enemies[i];
+				DataManager.Instance.enemies[i].x = item.x;
+				DataManager.Instance.enemies[i].y = item.y;
+				DataManager.Instance.enemies[i].state = item.state;
+				DataManager.Instance.enemies[i].direction = item.direction;
+			}
+
+			for (let i = 0; i < data.spikes.length; i++) {
+				const item = data.spikes[i];
+				DataManager.Instance.spikes[i].x = item.x;
+				DataManager.Instance.spikes[i].y = item.y;
+				DataManager.Instance.spikes[i].count = item.count;
+			}
+
+			for (let i = 0; i < data.bursts.length; i++) {
+				const item = data.bursts[i];
+				DataManager.Instance.bursts[i].x = item.x;
+				DataManager.Instance.bursts[i].y = item.y;
+				DataManager.Instance.bursts[i].state = item.state;
+			}
+
+			DataManager.Instance.door.x = data.door.x;
+			DataManager.Instance.door.y = data.door.y;
+			DataManager.Instance.door.state = data.door.state;
+			DataManager.Instance.door.direction = data.door.direction;
+		} 
 	}
 }
