@@ -21,6 +21,7 @@ import { SpikesManager } from "../Spikes/SpikesManager";
 import { SmokeManager } from "../Smoke/SmokeManager";
 import { ShakeManager } from "../UI/ShakeManager";
 import FadeManager from "../../Runtime/FadeManager";
+import { DialogManager } from "./DialogManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("BattleManager")
@@ -39,6 +40,7 @@ export class BattleManager extends Component {
 		EventManager.Instance.on(EVENT_ENUM.RESTART_LEVEL, this.initLevel, this);
 		EventManager.Instance.on(EVENT_ENUM.OUT_BATTLE, this.outBattle, this);
 		EventManager.Instance.on(EVENT_ENUM.GAME_OVER, this.gameOver, this);
+    EventManager.Instance.on(EVENT_ENUM.WIN, this.winGame, this);
 	}
 
 	onDestroy() {
@@ -50,6 +52,7 @@ export class BattleManager extends Component {
 		EventManager.Instance.off(EVENT_ENUM.RESTART_LEVEL, this.initLevel);
 		EventManager.Instance.off(EVENT_ENUM.OUT_BATTLE, this.outBattle);
 		EventManager.Instance.off(EVENT_ENUM.GAME_OVER, this.gameOver);
+    EventManager.Instance.off(EVENT_ENUM.WIN, this.winGame);
 	}
 
 	start() {
@@ -60,11 +63,9 @@ export class BattleManager extends Component {
       DataManager.Instance.levelIndex = 1
       local.set("levelIndex", 1)
     }
-    console.log(level)
 		this.generateStage();
 		this.initLevel();
 	}
-
 	async initLevel() {
     const levelIndex = local.get("levelIndex")
     if(levelIndex) {
@@ -96,12 +97,15 @@ export class BattleManager extends Component {
 				this.generateSmokeLayer(),
 				this.generatePlayer(),
 			]);
-
 			await FadeManager.Instance.fadeOut();
 			this.initd = true;
 			this.generateLevelTitle();
 		}
 	}
+
+  async winGame() {
+    director.loadScene(SCENE_ENUM.WIN);
+  }
 
 	async outBattle() {
 		await FadeManager.Instance.fadeIn();
@@ -258,7 +262,11 @@ export class BattleManager extends Component {
 			playerY === doorY &&
 			doorState === STATE_ENUM.DEATH
 		) {
-			EventManager.Instance.emit(EVENT_ENUM.NEXT_LEVEL);
+      if(DataManager.Instance.levelIndex === 15) {
+        EventManager.Instance.emit(EVENT_ENUM.WIN);
+      } else {
+        EventManager.Instance.emit(EVENT_ENUM.NEXT_LEVEL);
+      }
 		}
 	}
 

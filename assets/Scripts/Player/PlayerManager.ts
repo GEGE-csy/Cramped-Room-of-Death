@@ -66,7 +66,6 @@ export class PlayerManager extends Manager {
 
 	onDead(type: STATE_ENUM) {
 		this.state = type;
-    console.log(type)
     EventManager.Instance.emit(EVENT_ENUM.GAME_OVER);
 	}
 

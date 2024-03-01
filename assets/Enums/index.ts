@@ -30,7 +30,8 @@ export enum EVENT_ENUM {
   REVOKE_STEP = 'REVOKE_STEP',
   RESTART_LEVEL = 'RESTART_LEVEL',
   OUT_BATTLE = 'OUT_BATTLE',
-  GAME_OVER = 'GAME_OVER'
+  GAME_OVER = 'GAME_OVER',
+  WIN = 'WIN',
 }
 
 // 点击方向
@@ -146,5 +147,6 @@ export enum SCENE_ENUM {
   Loading = 'Loading',
   Start = 'Start',
   Battle = 'Battle',
-  GAME_OVER = 'Over'
+  GAME_OVER = 'Over',
+  WIN = 'End'
 }

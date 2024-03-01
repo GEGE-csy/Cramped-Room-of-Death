@@ -261,9 +261,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 0,
-      "g": 0,
-      "b": 0,
+      "r": 20,
+      "g": 11,
+      "b": 40,
       "a": 255
     },
     "_spriteFrame": {
@@ -747,7 +747,7 @@
       "b": 204,
       "a": 255
     },
-    "_string": "（Tap Any Where To Start）",
+    "_string": "(Tap Any Where To Start)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 30,
